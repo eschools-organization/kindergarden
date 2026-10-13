@@ -67,6 +67,7 @@ export default function ActivityPhotoUploader({
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().slice(0, 10));
 
   const [activityTitle, setActivityTitle] = useState<string>("");
+  const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
   const [description, setDescription] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -101,6 +102,35 @@ export default function ActivityPhotoUploader({
   useEffect(() => {
     fetchPhotos();
   }, [selectedGroup, selectedDate]);
+
+  const togglePresetActivity = (preset: string) => {
+    setSelectedActivities((prev) => {
+      let next: string[];
+      if (prev.includes(preset)) {
+        next = prev.filter((p) => p !== preset);
+      } else {
+        next = [...prev, preset];
+      }
+      setActivityTitle(next.join(", "));
+      return next;
+    });
+  };
+
+  const handleSelectAllActivities = () => {
+    setSelectedActivities([...PRESET_ACTIVITIES]);
+    setActivityTitle(PRESET_ACTIVITIES.join(", "));
+  };
+
+  const handleClearActivities = () => {
+    setSelectedActivities([]);
+    setActivityTitle("");
+  };
+
+  const handleTitleChange = (val: string) => {
+    setActivityTitle(val);
+    const matched = PRESET_ACTIVITIES.filter((p) => val.includes(p));
+    setSelectedActivities(matched);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -141,6 +171,8 @@ export default function ActivityPhotoUploader({
       const uploadData = await uploadRes.json();
       const photoUrl = uploadData.file_url;
 
+      const finalTitle = activityTitle.trim() || (selectedActivities.length > 0 ? selectedActivities.join(", ") : "შესრულებული აქტივობა");
+
       // Step 2: Save activity photo record via /api/activity-photos
       const saveRes = await fetch("/api/activity-photos", {
         method: "POST",
@@ -149,7 +181,8 @@ export default function ActivityPhotoUploader({
           class_id: selectedGroup,
           teacher_id: currentTeacherId,
           teacher_name: currentTeacherName,
-          activity_title: activityTitle.trim() || "შესრულებული აქტივობა",
+          activity_title: finalTitle,
+          activities: selectedActivities.length > 0 ? selectedActivities : [finalTitle],
           description: description.trim(),
           photo_url: photoUrl,
           date: selectedDate,
@@ -161,6 +194,7 @@ export default function ActivityPhotoUploader({
         // Reset form
         setSelectedFile(null);
         setPreviewUrl(null);
+        setSelectedActivities([]);
         setActivityTitle("");
         setDescription("");
         // Refresh photos list
@@ -290,36 +324,116 @@ export default function ActivityPhotoUploader({
 
           {/* Activity Title Preset Chips & Input */}
           <div>
-            <label style={{ display: "block", fontSize: "13px", fontWeight: 800, color: "#334155", marginBottom: "6px" }}>
-              აქტივობის დასახელება:
-            </label>
-            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "8px" }}>
-              {PRESET_ACTIVITIES.map(preset => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => setActivityTitle(preset)}
-                  style={{
-                    padding: "6px 12px",
-                    borderRadius: "20px",
-                    border: activityTitle === preset ? "1px solid #2563eb" : "1px solid #e2e8f0",
-                    background: activityTitle === preset ? "#eff6ff" : "#f8fafc",
-                    color: activityTitle === preset ? "#2563eb" : "#475569",
-                    fontWeight: 700,
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", flexWrap: "wrap", gap: "8px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 800, color: "#334155", display: "flex", alignItems: "center", gap: "6px" }}>
+                <span>🎯 აქტივობის დასახელება & მონიშვნა:</span>
+                {selectedActivities.length > 0 && (
+                  <span style={{
                     fontSize: "12px",
+                    fontWeight: 700,
+                    background: "#2563eb",
+                    color: "#ffffff",
+                    padding: "2px 8px",
+                    borderRadius: "12px",
+                  }}>
+                    {selectedActivities.length} მონიშნული
+                  </span>
+                )}
+              </label>
+
+              <div style={{ display: "flex", gap: "6px" }}>
+                <button
+                  type="button"
+                  onClick={handleSelectAllActivities}
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    padding: "3px 8px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                    background: "#f8fafc",
+                    color: "#475569",
                     cursor: "pointer",
-                    transition: "all 0.15s ease",
                   }}
                 >
-                  {preset}
+                  ყველას მონიშვნა
                 </button>
-              ))}
+                {selectedActivities.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearActivities}
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      padding: "3px 8px",
+                      borderRadius: "6px",
+                      border: "1px solid #fecaca",
+                      background: "#fef2f2",
+                      color: "#dc2626",
+                      cursor: "pointer",
+                    }}
+                  >
+                    გასუფთავება
+                  </button>
+                )}
+              </div>
             </div>
+
+            <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 8px 0" }}>
+              დააჭირეთ სასურველ აქტივობებს (შეგიძლიათ მონიშნოთ რამოდენიმე ერთდროულად):
+            </p>
+
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "10px" }}>
+              {PRESET_ACTIVITIES.map(preset => {
+                const isSelected = selectedActivities.includes(preset);
+                return (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => togglePresetActivity(preset)}
+                    style={{
+                      padding: "7px 14px",
+                      borderRadius: "20px",
+                      border: isSelected ? "1px solid #2563eb" : "1px solid #cbd5e1",
+                      background: isSelected ? "#2563eb" : "#f8fafc",
+                      color: isSelected ? "#ffffff" : "#334155",
+                      fontWeight: 700,
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      transition: "all 0.15s ease",
+                      boxShadow: isSelected ? "0 4px 12px rgba(37, 99, 235, 0.25)" : "none",
+                      transform: isSelected ? "scale(1.02)" : "scale(1)",
+                    }}
+                  >
+                    <span style={{
+                      width: "14px",
+                      height: "14px",
+                      borderRadius: "4px",
+                      border: isSelected ? "1px solid #ffffff" : "1px solid #94a3b8",
+                      background: isSelected ? "#ffffff" : "transparent",
+                      color: "#2563eb",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "10px",
+                      fontWeight: 900,
+                    }}>
+                      {isSelected ? "✓" : ""}
+                    </span>
+                    {preset}
+                  </button>
+                );
+              })}
+            </div>
+
             <input
               type="text"
-              placeholder="მაგ: ხატვის გაკვეთილი / შემოდგომის აპლიკაციები"
+              placeholder="მაგ: ხატვის გაკვეთილი / შემოდგომის აპლიკაციები (შეგიძლიათ ჩაწეროთ დამატებით)"
               value={activityTitle}
-              onChange={e => setActivityTitle(e.target.value)}
+              onChange={e => handleTitleChange(e.target.value)}
               style={{
                 width: "100%",
                 padding: "10px 14px",
@@ -564,8 +678,23 @@ export default function ActivityPhotoUploader({
                 </div>
 
                 <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
-                  <div style={{ fontWeight: 800, fontSize: "15px", color: "#0f172a" }}>
-                    {item.activity_title}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                    {item.activity_title.split(/•|,/).map((act, i) => (
+                      <span
+                        key={i}
+                        style={{
+                          background: "#eff6ff",
+                          color: "#1d4ed8",
+                          border: "1px solid #bfdbfe",
+                          padding: "3px 8px",
+                          borderRadius: "10px",
+                          fontSize: "12px",
+                          fontWeight: 800,
+                        }}
+                      >
+                        {act.trim()}
+                      </span>
+                    ))}
                   </div>
                   {item.description && (
                     <div style={{ fontSize: "13px", color: "#475569", lineHeight: "1.4" }}>
@@ -662,8 +791,23 @@ export default function ActivityPhotoUploader({
               </button>
             </div>
             <div style={{ padding: "20px 24px" }}>
-              <div style={{ fontSize: "18px", fontWeight: 900, color: "#0f172a", marginBottom: "6px" }}>
-                {activeLightbox.activity_title}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
+                {activeLightbox.activity_title.split(/•|,/).map((act, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      background: "#eff6ff",
+                      color: "#1d4ed8",
+                      border: "1px solid #bfdbfe",
+                      padding: "4px 12px",
+                      borderRadius: "14px",
+                      fontSize: "13px",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {act.trim()}
+                  </span>
+                ))}
               </div>
               {activeLightbox.description && (
                 <div style={{ fontSize: "14px", color: "#334155", marginBottom: "12px" }}>

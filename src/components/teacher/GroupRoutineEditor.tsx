@@ -23,6 +23,20 @@ interface GroupRoutineEditorProps {
 
 const EMOJI_OPTIONS = ["🌅", "🍳", "📚", "⚽", "🧩", "🍲", "😴", "🍎", "🎨", "🎵", "🧼", "📖", "🧸", "🧘", "🚀"];
 
+const PRESET_ROUTINE_ACTIVITIES = [
+  { emoji: "🌅", name: "დილის მიღება & ვარჯიში" },
+  { emoji: "🍳", name: "საუზმე" },
+  { emoji: "📚", name: "შემეცნებითი მეცადინეობა" },
+  { emoji: "🎨", name: "ხატვა & ძერწვა" },
+  { emoji: "🎵", name: "მუსიკა & ცეკვა" },
+  { emoji: "⚽", name: "ეზოში სეირნობა & თამაშები" },
+  { emoji: "🍲", name: "სადილი" },
+  { emoji: "😴", name: "დღის ძილი" },
+  { emoji: "🍎", name: "სამხარი" },
+  { emoji: "🧩", name: "განმავითარებელი თამაშები" },
+  { emoji: "📖", name: "ზღაპრის კითხვა" },
+];
+
 const WEEKDAYS = [
   { id: -1, label: "ყველა დღე", short: "ყველა" },
   { id: 0, label: "ყოველი დღე (ორშ-პარ)", short: "ყოველდღე" },
@@ -50,6 +64,7 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
   const [timeStart, setTimeStart] = useState("09:00");
   const [timeEnd, setTimeEnd] = useState("09:30");
   const [title, setTitle] = useState("");
+  const [selectedPresetActivities, setSelectedPresetActivities] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("🍳");
   const [dayOfWeek, setDayOfWeek] = useState<number>(0);
@@ -66,11 +81,26 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
     enabled: !!classId,
   });
 
+  const toggleRoutinePreset = (item: { emoji: string; name: string }) => {
+    setSelectedPresetActivities((prev) => {
+      let next: string[];
+      if (prev.includes(item.name)) {
+        next = prev.filter((n) => n !== item.name);
+      } else {
+        next = [...prev, item.name];
+        setIcon(item.emoji);
+      }
+      setTitle(next.join(" & "));
+      return next;
+    });
+  };
+
   const openAddModal = () => {
     setEditingItem(null);
     setTimeStart("09:00");
     setTimeEnd("09:30");
     setTitle("");
+    setSelectedPresetActivities([]);
     setDescription("");
     setIcon("🍳");
     setDayOfWeek(selectedDayFilter > 0 ? selectedDayFilter : 0);
@@ -82,6 +112,8 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
     setTimeStart(item.time_start || "09:00");
     setTimeEnd(item.time_end || "09:30");
     setTitle(item.title || "");
+    const matched = PRESET_ROUTINE_ACTIVITIES.filter(p => (item.title || "").includes(p.name)).map(p => p.name);
+    setSelectedPresetActivities(matched);
     setDescription(item.description || "");
     setIcon(item.icon || "🍳");
     setDayOfWeek(item.day_of_week !== undefined ? item.day_of_week : 0);
@@ -589,12 +621,46 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
 
               <div>
                 <label style={{ display: "block", fontSize: "13px", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
-                  აქტივობის სათაური
+                  აქტივობის სათაური & სწრაფი მონიშვნა
                 </label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "10px" }}>
+                  {PRESET_ROUTINE_ACTIVITIES.map(preset => {
+                    const isSelected = selectedPresetActivities.includes(preset.name);
+                    return (
+                      <button
+                        key={preset.name}
+                        type="button"
+                        onClick={() => toggleRoutinePreset(preset)}
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: "16px",
+                          border: isSelected ? `1px solid ${selectedColor}` : "1px solid #cbd5e1",
+                          background: isSelected ? selectedColor : "#f8fafc",
+                          color: isSelected ? "#ffffff" : "#334155",
+                          fontWeight: 700,
+                          fontSize: "12px",
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          transition: "all 0.15s ease"
+                        }}
+                      >
+                        <span>{preset.emoji}</span>
+                        <span>{preset.name}</span>
+                        {isSelected && <span style={{ marginLeft: "2px", fontWeight: 900 }}>✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
                 <input
                   type="text"
                   value={title}
-                  onChange={e => setTitle(e.target.value)}
+                  onChange={e => {
+                    setTitle(e.target.value);
+                    const matched = PRESET_ROUTINE_ACTIVITIES.filter(p => e.target.value.includes(p.name)).map(p => p.name);
+                    setSelectedPresetActivities(matched);
+                  }}
                   placeholder="მაგ: დილის ვარჯიში & საუზმე"
                   required
                   style={{

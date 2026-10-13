@@ -334,8 +334,9 @@ const StudentList: React.FC<StudentListProps> = ({
                     <tbody>
                         {finalFilteredStudents.length > 0 ? finalFilteredStudents.map((student) => {
                             const pStatus = getPaymentStatus(student.payment_due_day, student.payment_amount, student.payment_status);
+                            const studentId = student._id || student.user_ID || student.ID || (student as any).id || '';
                             return (
-                            <tr key={student._id}>
+                            <tr key={studentId}>
                                 <td>{student.name}</td>
                                 <td>{student.surname}</td>
                                 <td>{student.ID || student.user_ID}</td>
@@ -403,10 +404,10 @@ const StudentList: React.FC<StudentListProps> = ({
                                                 <button className="admin-action-btn edit" onClick={() => onEditStudent(student)} title="რედაქტირება">
                                                     <EditIcon />
                                                 </button>
-                                                <button className="admin-action-btn delete" onClick={() => onDeleteStudent(student._id)} title="წაშლა">
+                                                <button className="admin-action-btn delete" onClick={() => onDeleteStudent(studentId)} title="წაშლა">
                                                     <TrashIcon />
                                                 </button>
-                                                <button className="admin-action-btn reset" onClick={() => onResetPassword(student._id)} title="აღდგენა">
+                                                <button className="admin-action-btn reset" onClick={() => onResetPassword(studentId)} title="აღდგენა">
                                                     <RestoreIcon />
                                                 </button>
                                             </>

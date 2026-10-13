@@ -607,12 +607,19 @@ const Admin: React.FC = () => {
     const handleDeleteStudent = async (studentId: string) => {
         const performDelete = async () => {
             try {
-                const res = await fetch(`/api/student/delete/${studentId}`, { method: 'DELETE' });
+                const res = await fetch(`/api/student/delete/${encodeURIComponent(studentId)}`, { method: 'DELETE' });
+                const data = await res.json().catch(() => ({}));
                 if (res.ok) {
                     showPopup('აღსაზრდელი წარმატებით წაიშალა.', 'success');
-                    if (classFilter) fetchStudents(classFilter, parallelFilter);
+                    setStudents(prev => prev.filter(s => 
+                        s._id !== studentId && 
+                        s.user_ID !== studentId && 
+                        s.ID !== studentId &&
+                        (s as any).id !== studentId
+                    ));
+                    fetchStudents(classFilter, parallelFilter);
                 } else {
-                    showPopup('აღსაზრდელის წაშლა ვერ მოხერხდა.', 'error');
+                    showPopup(`აღსაზრდელის წაშლა ვერ მოხერხდა: ${data.message || 'შეცდომა'}`, 'error');
                 }
             } catch (err) {
                 showPopup('აღსაზრდელის წაშლისას მოხდა შეცდომა.', 'error');

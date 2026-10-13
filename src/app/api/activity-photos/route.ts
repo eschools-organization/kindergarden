@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { class_id, teacher_id, teacher_name, activity_title, description, photo_url, date } = body;
+    const { class_id, teacher_id, teacher_name, activity_title, activities, description, photo_url, date } = body;
 
     if (!class_id || !photo_url) {
       return NextResponse.json(
@@ -52,11 +52,16 @@ export async function POST(req: NextRequest) {
     const db = await getDb();
     const collection = db.collection("activity_photos");
 
+    const resolvedActivities = Array.isArray(activities) && activities.length > 0
+      ? activities
+      : (activity_title ? String(activity_title).split(/•|,/).map((s: string) => s.trim()).filter(Boolean) : []);
+
     const newPhotoRecord = {
       class_id: String(class_id),
       teacher_id: teacher_id ? String(teacher_id) : "",
       teacher_name: teacher_name || "აღმზრდელი",
-      activity_title: activity_title || "შესრულებული აქტივობა",
+      activity_title: activity_title || (resolvedActivities.length > 0 ? resolvedActivities.join(", ") : "შესრულებული აქტივობა"),
+      activities: resolvedActivities,
       description: description || "",
       photo_url: String(photo_url),
       date: date || new Date().toISOString().slice(0, 10),
@@ -95,6 +100,6 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ message: "აქტივობის ფოტო წაიშალა" });
   } catch (err: any) {
-    return NextResponse.json({ message: "შე测დომა წაშლისას", error: err.message }, { status: 500 });
+    return NextResponse.json({ message: "შეცდომა წაშლისას", error: err.message }, { status: 500 });
   }
 }
