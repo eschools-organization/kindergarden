@@ -180,9 +180,9 @@ export default function HomeworkModule({
   };
 
   return (
-    <div style={{ width: "100%", color: "#0f172a" }}>
+    <div className="homework-module-container" style={{ width: "100%", color: "#0f172a" }}>
       {/* Header Bar */}
-      <div style={{
+      <div className="homework-header-bar" style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -317,6 +317,7 @@ export default function HomeworkModule({
             return (
               <div
                 key={asn._id?.toString()}
+                className="homework-item-card"
                 style={{
                   background: "#ffffff",
                   border: "1px solid #e2e8f0",

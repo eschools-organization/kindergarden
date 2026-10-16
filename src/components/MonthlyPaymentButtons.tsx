@@ -63,7 +63,7 @@ export const MonthlyPaymentButtons: React.FC<MonthlyPaymentButtonsProps> = ({
   };
 
   return (
-    <div style={{
+    <div className="monthly-payments-card" style={{
       width: '100%',
       background: 'rgba(15, 23, 42, 0.65)',
       backdropFilter: 'blur(20px)',
@@ -82,7 +82,7 @@ export const MonthlyPaymentButtons: React.FC<MonthlyPaymentButtonsProps> = ({
         </span>
       </div>
 
-      <div style={{
+      <div className="monthly-payments-grid" style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
         gap: '12px'
@@ -94,6 +94,7 @@ export const MonthlyPaymentButtons: React.FC<MonthlyPaymentButtonsProps> = ({
           return (
             <button
               key={month}
+              className="monthly-payment-btn"
               onClick={() => handleTogglePayment(month)}
               disabled={isLoading || isReadOnly}
               title={isReadOnly ? `${month}: ${isPaid ? 'გადახდილია' : 'გადაუხდელია'}` : `დააჭირეთ ${month}-ის გადახდის შესაცვლელად`}

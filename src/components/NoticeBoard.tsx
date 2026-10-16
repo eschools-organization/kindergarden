@@ -123,7 +123,7 @@ const NoticeBoard: React.FC<NoticeBoardProps> = ({ allowCreate, currentUser }) =
   }
 
   return (
-    <div style={{
+    <div className="notice-board-container" style={{
       maxWidth: '1000px',
       width: '100%',
       margin: '0 auto',
@@ -297,7 +297,7 @@ const NoticeBoard: React.FC<NoticeBoardProps> = ({ allowCreate, currentUser }) =
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {announcements && announcements.map(item => (
-            <div key={item._id} style={{
+            <div key={item._id} className="notice-board-card" style={{
               background: 'white',
               border: '1px solid #f1f5f9',
               borderRadius: '16px',

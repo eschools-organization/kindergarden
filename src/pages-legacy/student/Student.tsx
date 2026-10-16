@@ -23,6 +23,7 @@ import {
 import { getPaymentStatus } from '@/lib/payment';
 import { clearAuthSession, validateSession, verifyAuthMe } from '@/lib/auth';
 import '../admin/Admin.css';
+import './Student.css';
 
 const FaSignOutAltIcon = FaSignOutAlt as React.ComponentType<any>;
 
@@ -226,14 +227,17 @@ const Student: React.FC = () => {
                 className="admin-page-bg-glow"
                 style={{ background: `radial-gradient(circle at center, ${selectedColor}26 0%, transparent 70%)` }}
             />
-            <ColorPalette />
-            <button className="logout-btn" onClick={handleLogout}>
-                <FaSignOutAltIcon /> გამოსვლა
-            </button>
+            {/* Top Fixed Controls (Palette & Logout) */}
+            <div className="student-top-controls">
+                <ColorPalette />
+                <button className="logout-btn" onClick={handleLogout} style={{ position: 'static' }}>
+                    <FaSignOutAltIcon /> გამოსვლა
+                </button>
+            </div>
 
             <div className="admin-page-content">
                 {/* Header Banner */}
-                <header className="admin-page-header animate-fade-in-down" style={{ marginBottom: '24px' }}>
+                <header className="student-page-header animate-fade-in-down">
                     <h1 className="admin-page-title">
                         მშობლის / აღსაზრდელის <span style={{ color: selectedColor }}>პანელი</span>
                     </h1>
@@ -243,48 +247,28 @@ const Student: React.FC = () => {
                 </header>
 
                 {/* Profile & Quick Info Card */}
-                <div style={{
-                    maxWidth: '1200px',
-                    margin: '0 auto 24px auto',
-                    background: 'rgba(26, 43, 85, 0.75)',
-                    backdropFilter: 'blur(30px)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    borderRadius: '20px',
-                    padding: '20px 24px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: '16px',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{
-                            width: '48px',
-                            height: '48px',
-                            borderRadius: '50%',
-                            background: `linear-gradient(135deg, ${selectedColor}, ${selectedColor}aa)`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white',
-                            fontWeight: 800,
-                            fontSize: '20px',
-                            boxShadow: `0 4px 15px ${selectedColor}40`
-                        }}>
+                <div className="student-profile-card">
+                    <div className="student-profile-info">
+                        <div
+                            className="student-avatar"
+                            style={{
+                                background: `linear-gradient(135deg, ${selectedColor}, ${selectedColor}aa)`,
+                                boxShadow: `0 4px 15px ${selectedColor}40`
+                            }}
+                        >
                             {studentInfo?.name?.[0] || 'ა'}{studentInfo?.surname?.[0] || ''}
                         </div>
                         <div>
-                            <div style={{ color: 'white', fontSize: '18px', fontWeight: 800 }}>
+                            <div className="student-name-text">
                                 {studentFullName}
                             </div>
-                            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', marginTop: '2px' }}>
+                            <div className="student-subtext">
                                 საბავშვო ბაღის ელექტრონული სისტემა • EKINDERGARTEN
                             </div>
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    <div className="student-profile-badges">
                         {studentInfo?.classInfo?.classname && (
                             <div style={{
                                 padding: '8px 16px',
@@ -307,7 +291,7 @@ const Student: React.FC = () => {
                             const pStatus = getPaymentStatus(studentInfo?.payment_due_day, studentInfo?.payment_amount, studentInfo?.payment_status);
                             const isPaid = studentInfo?.payment_status === 'paid';
                             return (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <>
                                     <div style={{
                                         padding: '8px 16px',
                                         borderRadius: '12px',
@@ -342,40 +326,37 @@ const Student: React.FC = () => {
                                     >
                                         {isPaid ? '🟢 გადახდილია' : '🔴 გადაუხდელია'}
                                     </div>
-                                </div>
+                                </>
                             );
                         })()}
                     </div>
                 </div>
 
                 {/* Tabs Navigation */}
-                <div style={{ maxWidth: '1200px', margin: '0 auto 24px auto' }}>
-                    <div className="admin-tabs" style={{ justifyContent: 'center' }}>
+                <div className="student-tabs-wrapper">
+                    <div className="admin-tabs student-tabs">
                         <button
                             onClick={() => setActiveTab('timeline')}
-                            className={`admin-tab-btn ${activeTab === 'timeline' ? 'active' : ''}`}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                            className={`admin-tab-btn student-tab-btn ${activeTab === 'timeline' ? 'active' : ''}`}
                         >
                             <FaCalendarAlt size={16} /> 🧸 დღის რეჟიმი & კვება
                         </button>
                         <button
                             onClick={() => setActiveTab('grades')}
-                            className={`admin-tab-btn ${activeTab === 'grades' ? 'active' : ''}`}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                            className={`admin-tab-btn student-tab-btn ${activeTab === 'grades' ? 'active' : ''}`}
                         >
                             <FaGraduationCap size={16} /> 📊 შეფასება & უნარები
                         </button>
                         <button
                             onClick={() => setActiveTab('homework')}
-                            className={`admin-tab-btn ${activeTab === 'homework' ? 'active' : ''}`}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                            className={`admin-tab-btn student-tab-btn ${activeTab === 'homework' ? 'active' : ''}`}
                         >
                             <FaTasks size={16} /> 🎨 სახლის აქტივობები
                         </button>
                         <button
                             onClick={() => setActiveTab('notices')}
-                            className={`admin-tab-btn ${activeTab === 'notices' ? 'active' : ''}`}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}
+                            className={`admin-tab-btn student-tab-btn ${activeTab === 'notices' ? 'active' : ''}`}
+                            style={{ position: 'relative' }}
                         >
                             <FaBullhorn size={16} /> 📢 განცხადებები
                             {hasUnreadNotices && (
@@ -391,17 +372,15 @@ const Student: React.FC = () => {
 
                         <button
                             onClick={() => setActiveTab('payments')}
-                            className={`admin-tab-btn ${activeTab === 'payments' ? 'active' : ''}`}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                            className={`admin-tab-btn student-tab-btn ${activeTab === 'payments' ? 'active' : ''}`}
                         >
                             <FaCreditCard size={16} /> 💳 თვიური გადასახადები
                         </button>
-                        
                     </div>
                 </div>
 
                 {/* Active Tab Panel Content */}
-                <div className="admin-main-view animate-zoom-in" style={{ maxWidth: '1200px', width: '100%', margin: '0 auto' }}>
+                <div className="student-main-view animate-zoom-in">
                     {renderTabContent()}
                 </div>
             </div>

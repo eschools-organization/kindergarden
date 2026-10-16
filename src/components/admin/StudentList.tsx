@@ -241,7 +241,7 @@ const StudentList: React.FC<StudentListProps> = ({
     };
 
     return (
-        <div className="admin-view-container animate-fade-in-down" style={{ width: '100%', maxWidth: '1200px' }}>
+        <div className="admin-view-container animate-fade-in-down" style={{ width: '100%', maxWidth: '1200px', boxSizing: 'border-box' }}>
             <header className="admin-view-header">
                 <button className="admin-back-btn" onClick={onBackClick}>
                     <ArrowLeftIcon size={20} /> უკან
@@ -250,8 +250,8 @@ const StudentList: React.FC<StudentListProps> = ({
             </header>
 
             {/* Manual Search Bar */}
-            <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
-                <div style={{ position: 'relative', width: '100%', maxWidth: '500px' }}>
+            <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center', width: '100%', boxSizing: 'border-box' }}>
+                <div style={{ position: 'relative', width: '100%', maxWidth: '500px', boxSizing: 'border-box' }}>
                     <SearchIcon style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} size={18} />
                     <input
                         type="text"
@@ -260,6 +260,7 @@ const StudentList: React.FC<StudentListProps> = ({
                         onChange={(e) => setSearchQuery(e.target.value)}
                         style={{
                             width: '100%',
+                            boxSizing: 'border-box',
                             padding: '12px 16px 12px 42px',
                             borderRadius: '14px',
                             background: '#ffffff',
@@ -275,7 +276,7 @@ const StudentList: React.FC<StudentListProps> = ({
             </div>
 
             {/* Grade / Group Filters */}
-            <div style={{ marginBottom: '30px', display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+            <div className="student-list-filters" style={{ marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
                 <button 
                     onClick={() => onGradeClick(null)} 
                     className={`admin-filter-btn ${classFilter === null ? 'active' : ''}`}
@@ -318,9 +319,10 @@ const StudentList: React.FC<StudentListProps> = ({
                 </div>
             )}
 
-            {/* Student Table */}
-            <div className="admin-list-container animate-zoom-in">
-                <table className="admin-table">
+            {/* Desktop Table View (Hidden on mobile <= 768px) */}
+            <div className="student-desktop-table-container admin-list-container animate-zoom-in">
+                <div className="admin-table-wrapper">
+                    <table className="admin-table">
                     <thead>
                         <tr>
                             <th>სახელი</th>
@@ -425,6 +427,135 @@ const StudentList: React.FC<StudentListProps> = ({
                         )}
                     </tbody>
                 </table>
+                </div>
+            </div>
+
+            {/* Mobile Cards View (Visible on mobile <= 768px) */}
+            <div className="student-mobile-cards-list animate-zoom-in">
+                {finalFilteredStudents.length > 0 ? (
+                    finalFilteredStudents.map((student) => {
+                        const pStatus = getPaymentStatus(student.payment_due_day, student.payment_amount, student.payment_status);
+                        const studentId = student._id || student.user_ID || student.ID || (student as any).id || '';
+                        const isPaid = student.payment_status === 'paid';
+                        const groupName = getClassNameStr(student.classInfo) || 'ჯგუფი არ არის';
+
+                        return (
+                            <div key={studentId} className="student-mobile-card">
+                                {/* Top: Initials avatar + Name/ID + Group Badge */}
+                                <div className="student-mobile-card-top">
+                                    <div
+                                        className="student-mobile-avatar"
+                                        style={{
+                                            background: `linear-gradient(135deg, ${selectedColor}, ${selectedColor}bb)`,
+                                            boxShadow: `0 3px 10px ${selectedColor}40`
+                                        }}
+                                    >
+                                        {student.name?.[0] || 'ა'}{student.surname?.[0] || ''}
+                                    </div>
+                                    <div className="student-mobile-name-col">
+                                        <div className="student-mobile-fullname">
+                                            {student.name} {student.surname}
+                                        </div>
+                                        <div className="student-mobile-id-badge">
+                                            პ/ნ: <strong>{student.ID || student.user_ID}</strong>
+                                        </div>
+                                    </div>
+                                    <div
+                                        className="student-mobile-group-chip"
+                                        style={{
+                                            background: `${selectedColor}18`,
+                                            color: selectedColor,
+                                            border: `1px solid ${selectedColor}44`
+                                        }}
+                                    >
+                                        {groupName}
+                                    </div>
+                                </div>
+
+                                {/* Payment section */}
+                                <div className="student-mobile-payment-section">
+                                    <div className="student-mobile-payment-info-row">
+                                        <span className="student-mobile-due-text">
+                                            📅 <strong>{pStatus.dueDay}</strong> რიცხვი ({pStatus.amount} ₾)
+                                        </span>
+                                        <span
+                                            className="student-mobile-status-pill"
+                                            style={{
+                                                backgroundColor: `${pStatus.badgeColor}18`,
+                                                color: pStatus.badgeColor,
+                                                border: `1px solid ${pStatus.badgeColor}50`
+                                            }}
+                                        >
+                                            {pStatus.badgeText}
+                                        </span>
+                                    </div>
+
+                                    {!isReadOnly && (
+                                        <button
+                                            type="button"
+                                            className="student-mobile-pay-btn"
+                                            onClick={() => handleTogglePaymentStatus(student)}
+                                            style={{
+                                                background: isPaid ? 'rgba(16, 185, 129, 0.14)' : 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                                                color: isPaid ? '#059669' : '#ffffff',
+                                                border: isPaid ? '1.5px solid #10b981' : '1px solid #1d4ed8'
+                                            }}
+                                        >
+                                            {isPaid ? '🟢 გადახდა დადასტურებულია' : '💳 გადახდის განახლება (დადასტურება)'}
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Actions row */}
+                                <div className="student-mobile-actions-bar">
+                                    <button
+                                        type="button"
+                                        className="student-mobile-btn-card"
+                                        onClick={() => onViewStudentCard(student)}
+                                        style={{
+                                            background: `linear-gradient(135deg, ${selectedColor} 0%, #3a8dde 100%)`,
+                                            boxShadow: `0 3px 10px ${selectedColor}33`
+                                        }}
+                                    >
+                                        📋 ქარდი
+                                    </button>
+                                    {!isReadOnly && (
+                                        <>
+                                            <button
+                                                type="button"
+                                                className="student-mobile-btn-action edit"
+                                                onClick={() => onEditStudent(student)}
+                                                title="რედაქტირება"
+                                            >
+                                                <EditIcon /> <span className="action-text">რედაქტირება</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="student-mobile-btn-action reset"
+                                                onClick={() => onResetPassword(studentId)}
+                                                title="პაროლის აღდგენა"
+                                            >
+                                                <RestoreIcon /> <span className="action-text">პაროლი</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="student-mobile-btn-action delete"
+                                                onClick={() => onDeleteStudent(studentId)}
+                                                title="წაშლა"
+                                            >
+                                                <TrashIcon /> <span className="action-text">წაშლა</span>
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })
+                ) : (
+                    <div className="student-mobile-empty">
+                        აღსაზრდელი ვერ მოიძებნა
+                    </div>
+                )}
             </div>
         </div>
     );

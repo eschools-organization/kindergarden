@@ -274,6 +274,37 @@
     box-shadow: 0 8px 20px rgba(37, 99, 235, 0.15);
 }
 
+/* Admin Top Fixed Controls */
+.admin-top-controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.admin-change-pass-btn {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #ffffff;
+    padding: 10px 18px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s;
+}
+
+.admin-change-pass-btn:hover {
+    background: #334155;
+    transform: translateY(-2px);
+}
+
 /* Glassmorphic Form Styles */
 .admin-form-container {
     width: 100%;
@@ -549,6 +580,12 @@
     margin-bottom: 30px;
     gap: 20px;
     flex-wrap: wrap;
+    box-sizing: border-box;
+}
+
+.admin-view-header .admin-back-btn {
+    align-self: center;
+    margin-bottom: 0;
 }
 
 .admin-view-title {
@@ -562,10 +599,263 @@
     text-shadow: none;
 }
 
+.admin-main-view {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+}
+
 .admin-view-container {
     width: 100%;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
+}
+
+/* Student Responsive Dual-View (Desktop Table vs Mobile Cards) */
+.student-desktop-table-container {
+    display: block;
+    width: 100%;
+}
+
+.student-mobile-cards-list {
+    display: none;
+}
+
+.student-mobile-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 16px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-sizing: border-box;
+    width: 100%;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.student-mobile-card:active {
+    transform: scale(0.99);
+}
+
+.student-mobile-card-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.student-mobile-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 800;
+    flex-shrink: 0;
+    text-transform: uppercase;
+}
+
+.student-mobile-name-col {
+    flex: 1;
+    min-width: 0;
+}
+
+.student-mobile-fullname {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.student-mobile-id-badge {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.student-mobile-group-chip {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.student-mobile-payment-section {
+    background: #f8fafc;
+    border-radius: 14px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: 1px solid #f1f5f9;
+}
+
+.student-mobile-payment-info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.student-mobile-due-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.student-mobile-status-pill {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+.student-mobile-pay-btn {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.student-mobile-pay-btn:active {
+    transform: scale(0.98);
+}
+
+.student-mobile-actions-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    margin-top: 2px;
+}
+
+.student-mobile-btn-card {
+    flex: 1.4;
+    padding: 9px 12px;
+    border-radius: 12px;
+    border: none;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+    transition: transform 0.15s;
+}
+
+.student-mobile-btn-card:active {
+    transform: scale(0.97);
+}
+
+.student-mobile-btn-action {
+    flex: 1;
+    padding: 9px 8px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: #334155;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.student-mobile-btn-action.edit:active {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #2563eb;
+}
+
+.student-mobile-btn-action.reset:active {
+    background: #fefce8;
+    border-color: #eab308;
+    color: #ca8a04;
+}
+
+.student-mobile-btn-action.delete:active {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #dc2626;
+}
+
+.student-mobile-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 600;
+    background: #ffffff;
+    border-radius: 18px;
+    border: 1px dashed #cbd5e1;
+}
+
+/* Dark mode theme for student cards */
+.theme-dark .student-mobile-card {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.2);
+}
+
+.theme-dark .student-mobile-fullname {
+    color: #f8fafc;
+}
+
+.theme-dark .student-mobile-id-badge {
+    color: #94a3b8;
+}
+
+.theme-dark .student-mobile-payment-section {
+    background: #0f172a;
+    border-color: #1e293b;
+}
+
+.theme-dark .student-mobile-due-text {
+    color: #e2e8f0;
+}
+
+.theme-dark .student-mobile-btn-action {
+    background: #1e293b;
+    border-color: #334155;
+    color: #94a3b8;
+}
+
+.theme-dark .student-mobile-empty {
+    background: #1e293b;
+    border-color: #334155;
+    color: #64748b;
 }
 
 .admin-table-wrapper {
@@ -839,11 +1129,64 @@
 @media (max-width: 768px) {
     .admin-page-wrapper {
         padding-top: 64px;
+        overflow-x: hidden;
     }
 
     .admin-page-content {
         padding: 0 12px 24px;
-        gap: 24px;
+        gap: 20px;
+        align-items: stretch;
+        width: 100%;
+        max-width: 100vw;
+        box-sizing: border-box;
+        overflow-x: hidden;
+    }
+
+    .admin-main-view {
+        width: 100%;
+        max-width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        box-sizing: border-box;
+    }
+
+    .admin-view-container {
+        width: 100%;
+        max-width: 100%;
+        align-items: stretch;
+        box-sizing: border-box;
+    }
+
+    .admin-top-controls {
+        top: 10px;
+        right: 10px;
+        gap: 6px;
+    }
+
+    .admin-change-pass-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+        border-radius: 10px;
+        gap: 4px;
+    }
+
+    .admin-top-controls .logout-btn {
+        padding: 6px 12px !important;
+        font-size: 12px !important;
+        border-radius: 10px !important;
+    }
+
+    .student-desktop-table-container {
+        display: none !important;
+    }
+
+    .student-mobile-cards-list {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     .admin-grid {
@@ -896,12 +1239,31 @@
     }
 
     .admin-view-header {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
         margin-bottom: 16px;
         gap: 12px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .admin-view-header .admin-back-btn {
+        margin-bottom: 0 !important;
+        align-self: center !important;
+        padding: 8px 14px;
+        font-size: 13px;
+        border-radius: 12px;
+        flex-shrink: 0;
     }
 
     .admin-view-title {
-        font-size: 24px;
+        font-size: 19px;
+        font-weight: 800;
+        margin: 0;
+        line-height: 1.25;
+        word-break: break-word;
     }
 
     .admin-table th,
@@ -1246,14 +1608,24 @@
     }
 
     .admin-view-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-        margin-bottom: 20px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 10px;
+        margin-bottom: 16px;
     }
 
     .admin-view-title {
-        font-size: 20px;
+        font-size: 17px;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-change-pass-text {
+        display: none;
+    }
+    .admin-change-pass-btn::after {
+        content: 'პაროლი';
     }
 }
 

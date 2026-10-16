@@ -2270,31 +2270,16 @@ const Admin: React.FC = () => {
             <div className="admin-page-bg-glow" style={{ background: `radial-gradient(circle at center, ${selectedColor}26 0%, transparent 70%)` }} />
 
             <ColorPalette />
-            <div style={{ position: 'fixed', top: '20px', right: '20px', display: 'flex', gap: '10px', zIndex: 1000 }}>
+            <div className="admin-top-controls">
                 <button
                     onClick={() => setIsChangePasswordModalOpen(true)}
-                    style={{
-                        background: '#1e293b',
-                        border: '1px solid #334155',
-                        color: '#ffffff',
-                        padding: '10px 18px',
-                        borderRadius: '12px',
-                        fontWeight: 800,
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        boxShadow: '0 4px 15px rgba(0,0,0,0.15)',
-                        transition: 'all 0.2s'
-                    }}
+                    className="admin-change-pass-btn"
                 >
-                    🔑 პაროლის შეცვლა
+                    🔑 <span className="admin-change-pass-text">პაროლის შეცვლა</span>
                 </button>
                 <button
                     onClick={handleLogout}
                     className="logout-btn"
-                    style={{ position: 'relative', top: '0', right: '0' }}
                 >
                     გასვლა
                 </button>

@@ -88,7 +88,7 @@ const StudentSubjectsGrades: React.FC<StudentSubjectsGradesProps> = ({ studentId
     const formatAvg = (n: number) => (n > 0 && n <= 10 ? customRoundGrade(n).toString() : '—');
 
     return (
-        <div style={{
+        <div className="student-grades-container" style={{
             maxWidth: '1200px',
             width: '100%',
             margin: '0 auto',
@@ -97,12 +97,11 @@ const StudentSubjectsGrades: React.FC<StudentSubjectsGradesProps> = ({ studentId
             fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif'
         }}>
             {/* Header */}
-            <div style={{
+            <div className="student-grades-header" style={{
                 background: `linear-gradient(135deg, ${selectedColor}, ${selectedColor}99)`,
                 color: 'white',
-                padding: '30px',
                 borderRadius: '16px',
-                marginBottom: '30px',
+                marginBottom: '24px',
                 textAlign: 'center',
                 display: 'flex',
                 flexDirection: 'column',
@@ -211,14 +210,8 @@ const StudentSubjectsGrades: React.FC<StudentSubjectsGradesProps> = ({ studentId
                 ];
 
                 return (
-                    <div key={subject.subject_id} style={{
-                        background: 'white',
-                        borderRadius: '12px',
-                        padding: '20px',
-                        marginBottom: '20px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                    }}>
-                        <div style={{
+                    <div key={subject.subject_id} className="student-subject-card">
+                        <div className="student-subject-header" style={{
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'baseline',
@@ -228,31 +221,26 @@ const StudentSubjectsGrades: React.FC<StudentSubjectsGradesProps> = ({ studentId
                             paddingBottom: '12px',
                             borderBottom: `2px solid ${selectedColor}33`,
                         }}>
-                            <h2 style={{ margin: 0, fontSize: '22px', color: selectedColor }}>
+                            <h2 className="student-subject-title" style={{ margin: 0, fontSize: '22px', color: selectedColor }}>
                                 {subject.name || subject.subject_name}
                             </h2>
-                            <span style={{ fontSize: '14px', color: '#666' }}>
+                            <span className="student-subject-teacher" style={{ fontSize: '14px', color: '#666' }}>
                                 {subject.teacher_name}
                             </span>
                         </div>
 
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                            gap: '14px',
-                        }}>
+                        <div className="student-stats-grid">
                             {stats.map((s) => (
-                                <div key={s.label} style={{
+                                <div key={s.label} className="student-stat-card" style={{
                                     background: `linear-gradient(135deg, ${selectedColor}, ${selectedColor}99)`,
                                     color: 'white',
-                                    padding: '18px',
                                     borderRadius: '10px',
                                     textAlign: 'center',
                                 }}>
-                                    <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '6px' }}>
+                                    <div className="student-stat-card-label" style={{ fontSize: '13px', opacity: 0.9, marginBottom: '6px' }}>
                                         {s.label}
                                     </div>
-                                    <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
+                                    <div className="student-stat-card-value" style={{ fontSize: '24px', fontWeight: 'bold' }}>
                                         {s.value}
                                     </div>
                                 </div>

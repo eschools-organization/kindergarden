@@ -1,0 +1,608 @@
+/* Student.css - Mobile & Responsive Styling for Pupils/Parent Portal */
+
+/* Top Action Controls (Theme Selector & Logout) */
+.student-top-controls {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 10px;
+  z-index: 1000;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .student-top-controls {
+    top: 10px;
+    right: 10px;
+    gap: 6px;
+  }
+
+  .student-top-controls .logout-btn {
+    padding: 7px 12px !important;
+    font-size: 11.5px !important;
+    border-radius: 10px !important;
+    gap: 6px !important;
+  }
+
+  .student-top-controls button {
+    padding: 7px 10px !important;
+    font-size: 11.5px !important;
+    border-radius: 10px !important;
+  }
+}
+
+/* Student Page Header */
+.student-page-header {
+  text-align: center;
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .student-page-header {
+    margin-bottom: 16px !important;
+  }
+
+  .student-page-header .admin-page-title {
+    font-size: clamp(20px, 5.5vw, 28px) !important;
+    margin-bottom: 8px !important;
+    line-height: 1.2 !important;
+  }
+
+  .student-page-header .admin-page-subtitle {
+    font-size: 12px !important;
+    letter-spacing: 1px !important;
+    padding-top: 8px !important;
+    line-height: 1.4 !important;
+  }
+}
+
+/* Student Profile Card */
+.student-profile-card {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto 24px auto;
+  background: rgba(26, 43, 85, 0.82);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.student-profile-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.student-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 800;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.student-name-text {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.student-subtext {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  margin-top: 3px;
+  font-weight: 600;
+}
+
+.student-profile-badges {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .student-profile-card {
+    padding: 16px 14px !important;
+    border-radius: 16px !important;
+    margin-bottom: 16px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+  }
+
+  .student-profile-info {
+    gap: 12px !important;
+  }
+
+  .student-avatar {
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 17px !important;
+  }
+
+  .student-name-text {
+    font-size: 16px !important;
+  }
+
+  .student-subtext {
+    font-size: 11.5px !important;
+  }
+
+  .student-profile-badges {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+
+  .student-profile-badges > div {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 9px 12px !important;
+    font-size: 12.5px !important;
+  }
+}
+
+/* Tabs Navigation - Touch Friendly Horizontal Scroll */
+.student-tabs-wrapper {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto 24px auto;
+  box-sizing: border-box;
+}
+
+.student-tabs {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 2px solid #cbd5e1;
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.08);
+  border-radius: 22px;
+  padding: 8px;
+  flex-wrap: wrap;
+  box-sizing: border-box;
+}
+
+.student-tab-btn {
+  flex: 0 0 auto;
+  padding: 12px 20px;
+  font-weight: 800;
+  font-size: 14px;
+  color: #475569;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.student-tab-btn:hover {
+  color: #0f172a;
+  background: rgba(241, 245, 249, 0.9);
+}
+
+.student-tab-btn.active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%) !important;
+  border-color: transparent !important;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35) !important;
+}
+
+@media (max-width: 820px) {
+  .student-tabs-wrapper {
+    margin: 0 auto 16px auto;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    padding: 0 4px;
+  }
+
+  .student-tabs-wrapper::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
+  }
+
+  .student-tabs {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    padding: 6px 8px !important;
+    border-radius: 16px !important;
+    width: max-content !important;
+    min-width: 100% !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+  }
+
+  .student-tab-btn {
+    padding: 10px 14px !important;
+    font-size: 12.5px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    border-radius: 12px !important;
+    gap: 6px !important;
+  }
+}
+
+/* Main Content Panel */
+.student-main-view {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   Grades & Skills (StudentSubjectsGrades) Mobile Styling
+   ========================================================================== */
+.student-grades-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.student-grades-header {
+  border-radius: 16px;
+  margin-bottom: 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 26px 20px;
+  box-sizing: border-box;
+  color: white;
+}
+
+.student-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.student-stat-card {
+  padding: 18px;
+  border-radius: 12px;
+  text-align: center;
+  color: white;
+  box-sizing: border-box;
+  transition: transform 0.2s ease;
+}
+
+@media (max-width: 640px) {
+  .student-grades-header {
+    padding: 18px 14px !important;
+    margin-bottom: 16px !important;
+    border-radius: 14px !important;
+  }
+
+  .student-grades-header h1 {
+    font-size: 19px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .student-grades-header p {
+    font-size: 13.5px !important;
+  }
+
+  .student-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .student-stat-card {
+    padding: 12px 8px !important;
+    border-radius: 10px !important;
+  }
+
+  .student-stat-card-label {
+    font-size: 11px !important;
+    margin-bottom: 4px !important;
+    line-height: 1.25 !important;
+  }
+
+  .student-stat-card-value {
+    font-size: 18px !important;
+    font-weight: 800 !important;
+  }
+}
+
+/* Subject Card */
+.student-subject-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .student-subject-card {
+    padding: 14px 12px !important;
+    border-radius: 14px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .student-subject-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 4px !important;
+    padding-bottom: 10px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .student-subject-title {
+    font-size: 17px !important;
+  }
+
+  .student-subject-teacher {
+    font-size: 12.5px !important;
+  }
+}
+
+/* ==========================================================================
+   Daily Timeline (DailyTimeline) Mobile Styling
+   ========================================================================== */
+.daily-timeline-day-selector {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+  justify-content: center;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.daily-timeline-day-selector::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .daily-timeline-day-selector {
+    justify-content: flex-start !important;
+    padding: 0 4px 10px 4px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .daily-timeline-day-btn {
+    padding: 8px 13px !important;
+    font-size: 12px !important;
+    flex-shrink: 0 !important;
+    border-radius: 10px !important;
+  }
+}
+
+.routine-activities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .routine-activities-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+}
+
+.timeline-container {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
+  border: 1px solid #f1f5f9;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .timeline-container {
+    padding: 16px 12px !important;
+    border-radius: 14px !important;
+  }
+
+  .timeline-row {
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .timeline-period-circle {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 13px !important;
+  }
+
+  .timeline-line {
+    left: 17px !important;
+  }
+
+  .timeline-card-content {
+    padding: 12px !important;
+    border-radius: 10px !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+}
+
+.activity-photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .activity-photos-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}
+
+/* ==========================================================================
+   Monthly Payments (MonthlyPaymentButtons) Mobile Styling
+   ========================================================================== */
+.monthly-payments-card {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  margin-top: 20px;
+  box-sizing: border-box;
+}
+
+.monthly-payments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .monthly-payments-card {
+    padding: 16px 12px !important;
+    border-radius: 16px !important;
+    margin-top: 14px !important;
+  }
+
+  .monthly-payments-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .monthly-payment-btn {
+    padding: 10px 8px !important;
+    font-size: 12px !important;
+    border-radius: 10px !important;
+  }
+}
+
+/* ==========================================================================
+   Admin Pupil List (StudentList) Responsive Enhancements
+   ========================================================================== */
+.student-list-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  .student-list-filters {
+    gap: 6px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .student-list-filters .admin-filter-btn {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    border-radius: 10px !important;
+  }
+
+  .admin-table-action-btn {
+    padding: 6px 10px !important;
+    font-size: 11.5px !important;
+  }
+
+  .admin-action-btn {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* ==========================================================================
+   Notice Board (NoticeBoard) Mobile Styling
+   ========================================================================== */
+.notice-board-container {
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .notice-board-container {
+    padding: 10px 4px !important;
+  }
+
+  .notice-board-card {
+    padding: 16px 14px !important;
+    border-radius: 14px !important;
+  }
+}
+
+/* ==========================================================================
+   Homework Module (HomeworkModule) Mobile Styling
+   ========================================================================== */
+.homework-module-container {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .homework-header-bar h3 {
+    font-size: 18px !important;
+  }
+
+  .homework-header-bar p {
+    font-size: 12.5px !important;
+  }
+
+  .homework-item-card {
+    padding: 16px 14px !important;
+    border-radius: 16px !important;
+  }
+}
+
+/* Safe area insets for mobile devices (iOS notch, Android navigation bars) */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .admin-page-wrapper {
+    padding-top: calc(70px + env(safe-area-inset-top));
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+
+  .student-top-controls {
+    top: calc(10px + env(safe-area-inset-top));
+    right: calc(10px + env(safe-area-inset-right));
+  }
+}
+

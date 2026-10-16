@@ -202,7 +202,7 @@ const DailyTimeline: React.FC<DailyTimelineProps> = ({ classId }) => {
       fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif'
     }}>
       {/* Day Selector Buttons */}
-      <div style={{
+      <div className="daily-timeline-day-selector" style={{
         display: 'flex',
         gap: '8px',
         overflowX: 'auto',
@@ -219,6 +219,7 @@ const DailyTimeline: React.FC<DailyTimelineProps> = ({ classId }) => {
           return (
             <button
               key={idx}
+              className="daily-timeline-day-btn"
               onClick={() => setSelectedDayIdx(idx)}
               style={{
                 padding: '10px 18px',
@@ -339,7 +340,7 @@ const DailyTimeline: React.FC<DailyTimelineProps> = ({ classId }) => {
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
+          <div className="routine-activities-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
             {groupRoutineItems
               .filter((item: any) => {
                 const targetDay = selectedDayIdx + 1;
@@ -398,7 +399,7 @@ const DailyTimeline: React.FC<DailyTimelineProps> = ({ classId }) => {
 
       {/* Timeline Section */}
       {!isHolidayDay && (
-        <div style={{
+        <div className="timeline-container" style={{
           background: 'white',
           borderRadius: '16px',
           padding: '30px 24px',
@@ -424,7 +425,7 @@ const DailyTimeline: React.FC<DailyTimelineProps> = ({ classId }) => {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
               {/* Vertical timeline connector line */}
-              <div style={{
+              <div className="timeline-line" style={{
                 position: 'absolute',
                 left: '20px',
                 top: '16px',
@@ -444,7 +445,7 @@ const DailyTimeline: React.FC<DailyTimelineProps> = ({ classId }) => {
                 const isPast = isTodaySelected && currentMinutes > slot.endMin;
 
                 return (
-                  <div key={slot.period} style={{
+                  <div key={slot.period} className="timeline-row" style={{
                     display: 'flex',
                     gap: '24px',
                     position: 'relative',
@@ -453,7 +454,7 @@ const DailyTimeline: React.FC<DailyTimelineProps> = ({ classId }) => {
                     opacity: isPast ? 0.6 : 1
                   }}>
                     {/* Timeline Period Circle */}
-                    <div style={{
+                    <div className="timeline-period-circle" style={{
                       width: '42px',
                       height: '42px',
                       borderRadius: '50%',
@@ -473,7 +474,7 @@ const DailyTimeline: React.FC<DailyTimelineProps> = ({ classId }) => {
                     </div>
 
                     {/* Card Content */}
-                    <div style={{
+                    <div className="timeline-card-content" style={{
                       flex: 1,
                       background: isActive ? `${selectedColor}05` : '#f8fafc',
                       border: isActive ? `1.5px solid ${selectedColor}` : '1.5px solid #f1f5f9',
@@ -535,7 +536,7 @@ const DailyTimeline: React.FC<DailyTimelineProps> = ({ classId }) => {
           <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             📸 დღის შესრულებული აქტივობების ფოტოები
           </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
+          <div className="activity-photos-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
             {activityPhotos.map((item) => (
               <div
                 key={item._id}
