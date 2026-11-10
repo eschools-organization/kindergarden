@@ -24,7 +24,14 @@ export async function POST(req: NextRequest) {
     const match = await bcrypt.compare(password, result.password);
     if (match) {
       const returnId = result.ID || result.user_ID || teacherId;
-      return NextResponse.json({ message: "ავტორიზაცია წარმატებით დასრულდა", user_ID: returnId, ID: returnId });
+      return NextResponse.json({
+        message: "ავტორიზაცია წარმატებით დასრულდა",
+        user_ID: returnId,
+        ID: returnId,
+        role: result.role || "teacher",
+        name: result.name,
+        surname: result.surname
+      });
     }
 
     return NextResponse.json({ message: "მონაცემები არასწორია" }, { status: 401 });

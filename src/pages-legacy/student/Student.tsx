@@ -129,13 +129,24 @@ const Student: React.FC = () => {
 
     // Fetch announcements for unread badge evaluation
     const { data: announcements } = useQuery({
-        queryKey: ['announcements-unread'],
+        queryKey: ['announcements-unread', classId],
         queryFn: async () => {
-            const response = await fetch('/api/announcements');
+            const response = await fetch(`/api/announcements?role=student&class_id=${encodeURIComponent(classId || '')}`);
             if (!response.ok) throw new Error();
             return response.json();
         },
-        refetchInterval: 8000
+        refetchInterval: 6000
+    });
+
+    const seenNoticeStorageKey = `seen_notice_ids_${studentId || 'student'}`;
+    const [seenNoticeIds, setSeenNoticeIds] = useState<string[]>(() => {
+        if (typeof window === 'undefined') return [];
+        try {
+            const raw = localStorage.getItem(seenNoticeStorageKey);
+            return raw ? JSON.parse(raw) : [];
+        } catch {
+            return [];
+        }
     });
 
     const hasUnreadMessages = React.useMemo(() => {
@@ -145,12 +156,13 @@ const Student: React.FC = () => {
         return incomingCount > seenCount;
     }, [allMessages, studentId]);
 
-    const hasUnreadNotices = React.useMemo(() => {
-        if (!announcements || !Array.isArray(announcements)) return false;
-        const totalNotices = announcements.length;
-        const seenNotices = typeof window !== 'undefined' ? parseInt(localStorage.getItem('seen_notices_count') || '0', 10) : 0;
-        return totalNotices > seenNotices;
-    }, [announcements]);
+    const unreadNotices = React.useMemo(() => {
+        if (!announcements || !Array.isArray(announcements)) return [];
+        const seenSet = new Set(seenNoticeIds.map(String));
+        return announcements.filter((a: any) => !seenSet.has(String(a._id)));
+    }, [announcements, seenNoticeIds]);
+
+    const hasUnreadNotices = unreadNotices.length > 0;
 
     // Clear messages badge when user clicks on Messages tab
     React.useEffect(() => {
@@ -163,9 +175,12 @@ const Student: React.FC = () => {
     // Clear notices badge when user clicks on notices tab
     React.useEffect(() => {
         if (activeTab === 'notices' && announcements && Array.isArray(announcements)) {
+            const allIds = announcements.map((a: any) => String(a._id));
+            setSeenNoticeIds(allIds);
+            localStorage.setItem(seenNoticeStorageKey, JSON.stringify(allIds));
             localStorage.setItem('seen_notices_count', announcements.length.toString());
         }
-    }, [activeTab, announcements]);
+    }, [activeTab, announcements, seenNoticeStorageKey]);
 
     const studentFullName = studentInfo ? `${studentInfo.name} ${studentInfo.surname}` : 'მოსწავლე';
 
@@ -332,6 +347,58 @@ const Student: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Red Unread Announcement Alert Banner for Parents */}
+                {hasUnreadNotices && activeTab !== 'notices' && (
+                    <div
+                        onClick={() => setActiveTab('notices')}
+                        style={{
+                            width: '100%',
+                            maxWidth: '1000px',
+                            margin: '0 auto 20px auto',
+                            padding: '14px 20px',
+                            borderRadius: '16px',
+                            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                            color: '#ffffff',
+                            border: '2px solid #fca5a5',
+                            boxShadow: '0 8px 25px rgba(239, 68, 68, 0.4)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: '12px',
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s ease'
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{
+                                background: '#ffffff',
+                                color: '#dc2626',
+                                padding: '4px 10px',
+                                borderRadius: '20px',
+                                fontWeight: 900,
+                                fontSize: '12px',
+                                whiteSpace: 'nowrap'
+                            }}>
+                                🔴 ახალი განცხადება ({unreadNotices.length})
+                            </span>
+                            <span style={{ fontWeight: 800, fontSize: '15px' }}>
+                                📢 {unreadNotices[0]?.title}
+                            </span>
+                        </div>
+                        <span style={{
+                            fontWeight: 800,
+                            fontSize: '13px',
+                            background: 'rgba(255,255,255,0.2)',
+                            padding: '6px 14px',
+                            borderRadius: '10px',
+                            whiteSpace: 'nowrap'
+                        }}>
+                            სრულად ნახვა →
+                        </span>
+                    </div>
+                )}
+
                 {/* Tabs Navigation */}
                 <div className="student-tabs-wrapper">
                     <div className="admin-tabs student-tabs">
@@ -356,17 +423,30 @@ const Student: React.FC = () => {
                         <button
                             onClick={() => setActiveTab('notices')}
                             className={`admin-tab-btn student-tab-btn ${activeTab === 'notices' ? 'active' : ''}`}
-                            style={{ position: 'relative' }}
+                            style={{
+                                position: 'relative',
+                                ...(hasUnreadNotices && activeTab !== 'notices' ? {
+                                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                                    color: '#ffffff',
+                                    borderColor: '#fca5a5',
+                                    boxShadow: '0 4px 16px rgba(239, 68, 68, 0.5)'
+                                } : {})
+                            }}
                         >
                             <FaBullhorn size={16} /> 📢 განცხადებები
                             {hasUnreadNotices && (
                                 <span style={{
-                                    width: '8px',
-                                    height: '8px',
-                                    borderRadius: '50%',
-                                    backgroundColor: '#ef4444',
-                                    boxShadow: '0 0 6px #ef4444'
-                                }} />
+                                    marginLeft: '6px',
+                                    padding: '2px 8px',
+                                    borderRadius: '12px',
+                                    backgroundColor: activeTab === 'notices' ? '#ef4444' : '#ffffff',
+                                    color: activeTab === 'notices' ? '#ffffff' : '#dc2626',
+                                    fontSize: '11px',
+                                    fontWeight: 900,
+                                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+                                }}>
+                                    ახალი ({unreadNotices.length})
+                                </span>
                             )}
                         </button>
 

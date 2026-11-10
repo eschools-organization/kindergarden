@@ -27,6 +27,7 @@ interface Announcement {
   class_id?: string | null;
   date: string;
   time: string;
+  created_at?: string;
 }
 
 const NoticeBoard: React.FC<NoticeBoardProps> = ({ allowCreate, currentUser }) => {
@@ -38,7 +39,18 @@ const NoticeBoard: React.FC<NoticeBoardProps> = ({ allowCreate, currentUser }) =
   const [formError, setFormError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  const canCreate = allowCreate !== undefined ? allowCreate : (currentUser.role === 'admin' || currentUser.role === 'superadmin' || currentUser.role === 'teacher');
+  const seenKey = `seen_notice_ids_${currentUser.id || currentUser.role || 'user'}`;
+  const [initialSeenIds] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const raw = localStorage.getItem(seenKey);
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const canCreate = allowCreate !== undefined ? allowCreate : (currentUser.role === 'admin' || currentUser.role === 'superadmin' || currentUser.role === 'teacher' || currentUser.role === 'methodist');
 
   // Fetch announcements
   const { data: announcements, isLoading, error } = useQuery<Announcement[]>({
@@ -52,8 +64,31 @@ const NoticeBoard: React.FC<NoticeBoardProps> = ({ allowCreate, currentUser }) =
         throw new Error('კავშირის შეცდომა');
       }
       return response.json();
-    }
+    },
+    refetchInterval: 8000
   });
+
+  React.useEffect(() => {
+    if (announcements && Array.isArray(announcements) && typeof window !== 'undefined') {
+      const allIds = announcements.map(a => String(a._id));
+      localStorage.setItem(seenKey, JSON.stringify(allIds));
+      localStorage.setItem('seen_notices_count', String(announcements.length));
+      localStorage.setItem('seen_notices_count_teacher', String(announcements.length));
+    }
+  }, [announcements, seenKey]);
+
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const isAnnouncementNew = (item: Announcement, index: number) => {
+    if (item.date === todayStr) return true;
+    if (item.created_at) {
+      const diffHours = (Date.now() - new Date(item.created_at).getTime()) / (1000 * 60 * 60);
+      if (diffHours >= 0 && diffHours <= 24) return true;
+    }
+    if (initialSeenIds.size > 0 && !initialSeenIds.has(String(item._id))) return true;
+    if (initialSeenIds.size === 0 && index === 0) return true;
+    return false;
+  };
 
   // Create announcement mutation
   const createMutation = useMutation({
@@ -296,79 +331,105 @@ const NoticeBoard: React.FC<NoticeBoardProps> = ({ allowCreate, currentUser }) =
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {announcements && announcements.map(item => (
-            <div key={item._id} className="notice-board-card" style={{
-              background: 'white',
-              border: '1px solid #f1f5f9',
-              borderRadius: '16px',
-              padding: '24px',
-              boxShadow: '0 8px 30px rgba(0,0,0,0.03)',
-              position: 'relative'
-            }}>
-              {/* Delete Button (if Admin or Author) */}
-              {(currentUser.role === 'admin' || item.author_id === currentUser.id) && (
-                <button
-                  onClick={() => {
-                    if (confirm('დარწმუნებული ხართ, რომ გსურთ განცხადების წაშლა?')) {
-                      deleteMutation.mutate(item._id);
-                    }
-                  }}
-                  style={{
-                    position: 'absolute',
-                    top: '24px',
-                    right: '24px',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    color: '#94a3b8',
-                    cursor: 'pointer',
-                    transition: 'color 0.2s',
-                    padding: '4px'
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
-                  onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}
-                >
-                  <TrashIcon size={18} />
-                </button>
-              )}
+          {announcements && announcements.map((item, idx) => {
+            const isNew = isAnnouncementNew(item, idx);
+            return (
+              <div key={item._id} className="notice-board-card" style={{
+                background: isNew ? 'linear-gradient(135deg, #fff5f5 0%, #ffffff 100%)' : 'white',
+                border: isNew ? '2px solid #ef4444' : '1px solid #f1f5f9',
+                borderLeft: isNew ? '6px solid #ef4444' : '1px solid #f1f5f9',
+                borderRadius: '16px',
+                padding: '24px',
+                boxShadow: isNew ? '0 8px 25px rgba(239, 68, 68, 0.15)' : '0 8px 30px rgba(0,0,0,0.03)',
+                position: 'relative',
+                transition: 'all 0.2s ease'
+              }}>
+                {/* Delete Button (if Admin or Author) */}
+                {(currentUser.role === 'admin' || item.author_id === currentUser.id) && (
+                  <button
+                    onClick={() => {
+                      if (confirm('დარწმუნებული ხართ, რომ გსურთ განცხადების წაშლა?')) {
+                        deleteMutation.mutate(item._id);
+                      }
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: '24px',
+                      right: '24px',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      color: '#94a3b8',
+                      cursor: 'pointer',
+                      transition: 'color 0.2s',
+                      padding: '4px'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                    onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}
+                  >
+                    <TrashIcon size={18} />
+                  </button>
+                )}
 
-              <div style={{ display: 'flex', gap: '16px' }}>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '12px',
-                  backgroundColor: `${selectedColor}12`,
-                  color: selectedColor,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <MegaphoneIcon size={24} />
-                </div>
-
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#1e293b', fontWeight: 700, paddingRight: '24px' }}>
-                    {item.title}
-                  </h3>
-                  
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', fontSize: '13px', color: '#64748b', marginBottom: '16px' }}>
-                    <span>გამოაქვეყნა: <strong>{item.author_name}</strong></span>
-                    <span>•</span>
-                    <span>{item.date} {item.time ? `• ${item.time.slice(0, 5)}` : ''}</span>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    backgroundColor: isNew ? '#fee2e2' : `${selectedColor}12`,
+                    border: isNew ? '1px solid #fecaca' : 'none',
+                    color: isNew ? '#dc2626' : selectedColor,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <MegaphoneIcon size={24} />
                   </div>
 
-                  <div style={{
-                    fontSize: '14px',
-                    color: '#334155',
-                    lineHeight: '1.6',
-                    whiteSpace: 'pre-wrap'
-                  }}>
-                    {item.content}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '8px', paddingRight: '24px' }}>
+                      <h3 style={{ margin: 0, fontSize: '18px', color: isNew ? '#991b1b' : '#1e293b', fontWeight: 800 }}>
+                        {item.title}
+                      </h3>
+                      {isNew && (
+                        <span style={{
+                          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                          color: '#ffffff',
+                          padding: '3px 10px',
+                          borderRadius: '20px',
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          letterSpacing: '0.3px',
+                          boxShadow: '0 2px 8px rgba(239, 68, 68, 0.35)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          🔴 ახალი სიახლე
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', fontSize: '13px', color: isNew ? '#b91c1c' : '#64748b', marginBottom: '16px' }}>
+                      <span>გამოაქვეყნა: <strong>{item.author_name}</strong></span>
+                      <span>•</span>
+                      <span>{item.date} {item.time ? `• ${item.time.slice(0, 5)}` : ''}</span>
+                    </div>
+
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#334155',
+                      lineHeight: '1.6',
+                      whiteSpace: 'pre-wrap',
+                      fontWeight: isNew ? 600 : 400
+                    }}>
+                      {item.content}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

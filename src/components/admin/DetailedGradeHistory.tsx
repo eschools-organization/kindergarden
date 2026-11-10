@@ -173,18 +173,21 @@ export const DetailedGradeHistory: React.FC<DetailedGradeHistoryProps> = ({
 
     const fullMealCount = students.filter(s => {
         const log = logMap.get(s._id);
-        return log && (log.lunch === 'შეჭამა სრულად' || log.breakfast === 'შეჭამა სრულად');
+        return log && (
+            log.lunch === 'all' || log.lunch === 'შეჭამა სრულად' || log.lunch === 'სრულად' ||
+            log.breakfast === 'all' || log.breakfast === 'შეჭამა სრულად' || log.breakfast === 'სრულად'
+        );
     }).length;
 
     const getMealPillStyle = (val?: string) => {
         if (!val) return { label: 'არ არის მითითებული', color: '#64748b', bg: '#f1f5f9', border: '#cbd5e1' };
-        if (val.includes('სრულად')) {
+        if (val === 'all' || val.includes('სრულად')) {
             return { label: '🟢 შეჭამა სრულად', color: '#065f46', bg: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)', border: '#10b981' };
         }
-        if (val.includes('ნაწილობრივ')) {
-            return { label: '🟡 ნაწილობრივ', color: '#92400e', bg: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', border: '#f59e0b' };
+        if (val === 'half' || val.includes('ნახევარი') || val.includes('ნაწილობრივ')) {
+            return { label: '🟡 ნახევარი', color: '#92400e', bg: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', border: '#f59e0b' };
         }
-        if (val.includes('არ შეჭამა')) {
+        if (val === 'none' || val.includes('არ შეჭამა')) {
             return { label: '🔴 არ შეჭამა', color: '#991b1b', bg: 'linear-gradient(135deg, #fee2e2 0%, #fca5a5 100%)', border: '#ef4444' };
         }
         return { label: val, color: '#1e40af', bg: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)', border: '#3b82f6' };
@@ -192,19 +195,30 @@ export const DetailedGradeHistory: React.FC<DetailedGradeHistoryProps> = ({
 
     const getMoodBadgeStyle = (val?: string) => {
         if (!val) return null;
-        if (val.includes('მხიარული') || val.includes('შესანიშნავი')) {
-            return { text: '🌟 მხიარული', bg: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)', color: '#ffffff', shadow: '0 4px 12px rgba(245, 158, 11, 0.35)' };
+        if (val === 'happy' || val.includes('მხიარული') || val.includes('შესანიშნავი')) {
+            return { text: '😊 მხიარული', bg: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)', color: '#ffffff', shadow: '0 4px 12px rgba(245, 158, 11, 0.35)' };
         }
-        if (val.includes('მშვიდი')) {
-            return { text: '😊 მშვიდი', bg: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)', color: '#ffffff', shadow: '0 4px 12px rgba(16, 185, 129, 0.35)' };
+        if (val === 'calm' || val.includes('მშვიდი')) {
+            return { text: '😌 მშვიდი', bg: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)', color: '#ffffff', shadow: '0 4px 12px rgba(16, 185, 129, 0.35)' };
         }
-        if (val.includes('დაღლილი')) {
-            return { text: '🥱 დაღლილი', bg: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)', color: '#ffffff', shadow: '0 4px 12px rgba(139, 92, 246, 0.35)' };
+        if (val === 'energetic' || val.includes('ენერგიული')) {
+            return { text: '⚡ ენერგიული', bg: 'linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)', color: '#ffffff', shadow: '0 4px 12px rgba(59, 130, 246, 0.35)' };
         }
-        if (val.includes('მოწყენილი')) {
-            return { text: '😢 მოწყენილი', bg: 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)', color: '#ffffff', shadow: '0 4px 12px rgba(236, 72, 153, 0.35)' };
+        if (val === 'sleepy' || val.includes('ეძინება') || val.includes('დაღლილი')) {
+            return { text: '😴 ეძინება', bg: 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)', color: '#ffffff', shadow: '0 4px 12px rgba(139, 92, 246, 0.35)' };
+        }
+        if (val === 'crying' || val.includes('ტირის') || val.includes('მოწყენილი')) {
+            return { text: '😢 ტირის / მოწყენილი', bg: 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)', color: '#ffffff', shadow: '0 4px 12px rgba(236, 72, 153, 0.35)' };
         }
         return { text: val, bg: 'linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)', color: '#ffffff', shadow: '0 4px 12px rgba(59, 130, 246, 0.35)' };
+    };
+
+    const getNapLabel = (val?: string) => {
+        if (!val) return '';
+        if (val === 'slept') return '🛌 ტკბილად ეძინა';
+        if (val === 'rested') return '😴 დაისვენა';
+        if (val === 'awake') return '👀 ეღვიძა';
+        return val;
     };
 
     if (loading) {
@@ -699,7 +713,7 @@ export const DetailedGradeHistory: React.FC<DetailedGradeHistoryProps> = ({
                                                 gap: '8px'
                                             }}>
                                                 <FaBed color="#7c3aed" size={16} />
-                                                <span>ძილი / დასვენება: <strong>{log.nap}</strong></span>
+                                                <span>ძილი / დასვენება: <strong>{getNapLabel(log.nap)}</strong></span>
                                             </div>
                                         )}
 

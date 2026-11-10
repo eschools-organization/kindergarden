@@ -50,7 +50,9 @@ interface GroupScheduleManagerProps {
   allTeachers: Teacher[];
   currentTeacherId: string;
   initialClassId?: string | null;
+  isMethodist?: boolean;
   onScheduleUpdated?: () => void;
+  onSubjectsUpdated?: () => void;
   showToast?: (msg: string, type: 'success' | 'error') => void;
 }
 
@@ -62,30 +64,91 @@ export default function GroupScheduleManager({
   allTeachers,
   currentTeacherId,
   initialClassId = null,
+  isMethodist = false,
   onScheduleUpdated,
+  onSubjectsUpdated,
   showToast
 }: GroupScheduleManagerProps) {
-  // Combine managed classes prioritising tutor classes
-  const managedClasses = React.useMemo(() => {
-    const list: ClassObj[] = [];
+  const [localClasses, setLocalClasses] = useState<ClassObj[]>([]);
+  const [localSubjects, setLocalSubjects] = useState<Subject[]>([]);
+  const [localTeachers, setLocalTeachers] = useState<Teacher[]>([]);
+  const [newSubjectName, setNewSubjectName] = useState("");
+  const [addingSubject, setAddingSubject] = useState(false);
+
+  // Sync props into local state
+  useEffect(() => {
+    const combined: ClassObj[] = [];
     const addedIds = new Set<string>();
 
-    tutorClasses.forEach(c => {
-      if (c && c._id && !addedIds.has(c._id)) {
-        addedIds.add(c._id);
-        list.push(c);
-      }
-    });
+    const addList = (arr: ClassObj[]) => {
+      (arr || []).forEach(c => {
+        if (c && c._id && !addedIds.has(c._id)) {
+          addedIds.add(c._id);
+          combined.push(c);
+        }
+      });
+    };
 
-    teachesClasses.forEach(c => {
-      if (c && c._id && !addedIds.has(c._id)) {
-        addedIds.add(c._id);
-        list.push(c);
-      }
-    });
+    addList(tutorClasses);
+    addList(teachesClasses);
+    if (isMethodist || combined.length === 0) {
+      addList(allClasses);
+    }
 
-    return list;
-  }, [tutorClasses, teachesClasses]);
+    if (combined.length > 0) {
+      setLocalClasses(combined);
+    }
+  }, [tutorClasses, teachesClasses, allClasses, isMethodist]);
+
+  useEffect(() => {
+    if (allSubjects && allSubjects.length > 0) {
+      setLocalSubjects(allSubjects);
+    }
+  }, [allSubjects]);
+
+  useEffect(() => {
+    if (allTeachers && allTeachers.length > 0) {
+      setLocalTeachers(allTeachers);
+    }
+  }, [allTeachers]);
+
+  // Fallback fetch if any list is empty (e.g. when methodist opens schedule directly)
+  useEffect(() => {
+    if (localClasses.length === 0) {
+      fetch("/api/classes")
+        .then(r => (r.ok ? r.json() : []))
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setLocalClasses(data);
+          }
+        })
+        .catch(() => {});
+    }
+    if (localSubjects.length === 0) {
+      fetch("/api/subjects")
+        .then(r => (r.ok ? r.json() : []))
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setLocalSubjects(data);
+          }
+        })
+        .catch(() => {});
+    }
+    if (localTeachers.length === 0) {
+      fetch("/api/teacher/all")
+        .then(r => (r.ok ? r.json() : []))
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setLocalTeachers(data);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [localClasses.length, localSubjects.length, localTeachers.length]);
+
+  const managedClasses = localClasses;
+  const effectiveSubjects = localSubjects;
+  const effectiveTeachers = localTeachers;
 
   const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [calendar, setCalendar] = useState<{ subject_id: string; teacher_id: string }[][]>(
@@ -98,12 +161,14 @@ export default function GroupScheduleManager({
   useEffect(() => {
     if (initialClassId && managedClasses.some(c => c._id === initialClassId)) {
       setSelectedClassId(initialClassId);
-    } else if (tutorClasses.length > 0) {
-      setSelectedClassId(tutorClasses[0]._id);
-    } else if (managedClasses.length > 0) {
-      setSelectedClassId(managedClasses[0]._id);
+    } else if (!selectedClassId || !managedClasses.some(c => c._id === selectedClassId)) {
+      if (tutorClasses.length > 0) {
+        setSelectedClassId(tutorClasses[0]._id);
+      } else if (managedClasses.length > 0) {
+        setSelectedClassId(managedClasses[0]._id);
+      }
     }
-  }, [initialClassId, tutorClasses, managedClasses]);
+  }, [initialClassId, tutorClasses, managedClasses, selectedClassId]);
 
   // Load calendar grid when selected class changes
   useEffect(() => {
@@ -135,13 +200,21 @@ export default function GroupScheduleManager({
 
       if (field === "subject_id") {
         currentCell.subject_id = value;
-        // Auto-assign teacher if subject has assigned teacher in class or default to current teacher
-        const currentClassObj = managedClasses.find(c => c._id === selectedClassId);
-        const assignedSubject = currentClassObj?.subjects?.find(s => String(s.subject_id) === String(value));
-        if (assignedSubject && assignedSubject.teacher_id) {
-          currentCell.teacher_id = String(assignedSubject.teacher_id);
-        } else if (!currentCell.teacher_id && currentTeacherId) {
-          currentCell.teacher_id = currentTeacherId;
+        if (!value) {
+          currentCell.teacher_id = "";
+        } else {
+          // Auto-assign teacher if subject has assigned teacher in class, or class homeroom teacher, or current teacher
+          const currentClassObj = managedClasses.find(c => c._id === selectedClassId);
+          const assignedSubject = currentClassObj?.subjects?.find(s => String(s.subject_id) === String(value));
+          if (assignedSubject && assignedSubject.teacher_id) {
+            currentCell.teacher_id = String(assignedSubject.teacher_id);
+          } else if (!currentCell.teacher_id) {
+            if (currentClassObj?.damrigebeli && effectiveTeachers.some(t => String(t._id) === String(currentClassObj.damrigebeli))) {
+              currentCell.teacher_id = String(currentClassObj.damrigebeli);
+            } else if (!isMethodist && currentTeacherId && effectiveTeachers.some(t => String(t._id) === String(currentTeacherId))) {
+              currentCell.teacher_id = String(currentTeacherId);
+            }
+          }
         }
       } else {
         currentCell.teacher_id = value;
@@ -152,7 +225,7 @@ export default function GroupScheduleManager({
     });
   };
 
-  const handleSaveCalendar = async () => {
+  const persistCalendar = async (calendarToSave: { subject_id: string; teacher_id: string }[][], successMessage: string) => {
     if (!selectedClassId) {
       if (showToast) showToast("გთხოვთ აირჩიოთ ჯგუფი", "error");
       return;
@@ -166,13 +239,19 @@ export default function GroupScheduleManager({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           class_id: selectedClassId,
-          calendar: calendar,
+          calendar: calendarToSave,
         }),
       });
 
       if (res.ok) {
         setSaveSuccess(true);
-        if (showToast) showToast("ჯგუფის დღის განრიგი წარმატებით შენახულია!", "success");
+        // Update localClasses immediately so switching groups/tabs keeps the new schedule
+        setLocalClasses(prev =>
+          prev.map(cls =>
+            cls._id === selectedClassId ? { ...cls, calendar: calendarToSave } : cls
+          )
+        );
+        if (showToast) showToast(successMessage, "success");
         if (onScheduleUpdated) onScheduleUpdated();
         setTimeout(() => setSaveSuccess(false), 3000);
       } else {
@@ -187,10 +266,48 @@ export default function GroupScheduleManager({
     }
   };
 
-  const handleClearCalendar = () => {
+  const handleSaveCalendar = async () => {
+    await persistCalendar(calendar, "ჯგუფის დღის განრიგი წარმატებით შენახულია!");
+  };
+
+  const handleClearCalendar = async () => {
     if (!selectedClassId) return;
     if (!confirm("ნამდვილად გსურთ არჩეული ჯგუფის განრიგის გასუფთავება?")) return;
-    setCalendar(Array(5).fill(null).map(() => Array(lessonsPerDay).fill({ subject_id: "", teacher_id: "" })));
+    const emptyCalendar = Array(5).fill(null).map(() => Array(lessonsPerDay).fill({ subject_id: "", teacher_id: "" }));
+    setCalendar(emptyCalendar);
+    await persistCalendar(emptyCalendar, "ჯგუფის განრიგი გასუფთავდა და შეინახა!");
+  };
+
+  const handleQuickAddSubject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = newSubjectName.trim();
+    if (!trimmed) return;
+    setAddingSubject(true);
+    try {
+      const res = await fetch("/api/subject/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const refreshed = await fetch("/api/subjects").then(r => (r.ok ? r.json() : []));
+        if (Array.isArray(refreshed) && refreshed.length > 0) {
+          setLocalSubjects(refreshed);
+        } else if (data._id) {
+          setLocalSubjects(prev => [...prev, { _id: String(data._id), name: trimmed }]);
+        }
+        setNewSubjectName("");
+        if (onSubjectsUpdated) onSubjectsUpdated();
+        if (showToast) showToast(`აქტივობა "${trimmed}" დაემატა!`, "success");
+      } else {
+        if (showToast) showToast(data.message || "აქტივობის დამატება ვერ მოხერხდა", "error");
+      }
+    } catch {
+      if (showToast) showToast("სერვერთან დაკავშირება ვერ მოხერხდა", "error");
+    } finally {
+      setAddingSubject(false);
+    }
   };
 
   const currentClassObj = managedClasses.find(c => c._id === selectedClassId);
@@ -233,7 +350,9 @@ export default function GroupScheduleManager({
                 დღის განრიგის შეტანა & ცვლილება
               </h2>
               <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "#94a3b8", fontWeight: 500 }}>
-                შეიტანეთ ან შეცვალეთ დღის განრიგი თქვენს მობარებულ ჯგუფში
+                {isMethodist
+                  ? "შეიტანეთ ან შეცვალეთ ნებისმიერი ჯგუფის კვირის და დღის განრიგი"
+                  : "შეიტანეთ ან შეცვალეთ დღის განრიგი თქვენს მობარებულ ჯგუფში"}
               </p>
             </div>
           </div>
@@ -241,7 +360,7 @@ export default function GroupScheduleManager({
           {/* Group Selector */}
           <div style={{ minWidth: "260px", flex: "1 1 300px" }}>
             <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#cbd5e1", marginBottom: "6px" }}>
-              აირჩიეთ მობარებული ჯგუფი:
+              {isMethodist ? "აირჩიეთ ჯგუფი:" : "აირჩიეთ მობარებული ჯგუფი:"}
             </label>
             <select
               value={selectedClassId}
@@ -262,7 +381,7 @@ export default function GroupScheduleManager({
             >
               <option value="" style={{ color: "#000" }}>-- აირჩიეთ ჯგუფი --</option>
               {managedClasses.map(cls => {
-                const isHomeroom = tutorClasses.some(tc => tc._id === cls._id);
+                const isHomeroom = !isMethodist && tutorClasses.some(tc => tc._id === cls._id);
                 return (
                   <option key={cls._id} value={cls._id} style={{ color: "#000" }}>
                     {isHomeroom ? `⭐ ${cls.classname} (მობარებული ჯგუფი)` : cls.classname}
@@ -282,14 +401,14 @@ export default function GroupScheduleManager({
                 fontWeight: 800,
                 padding: "4px 12px",
                 borderRadius: "20px",
-                background: isTutorClass ? "#2563eb" : "#475569",
+                background: isMethodist ? "#7c3aed" : isTutorClass ? "#2563eb" : "#475569",
                 color: "#ffffff",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px"
               }}
             >
-              {isTutorClass ? "⭐ თქვენი მობარებული ჯგუფი" : "ჯგუფის განრიგი"}
+              {isMethodist ? "📋 მეთოდისტის რეჟიმი" : isTutorClass ? "⭐ თქვენი მობარებული ჯგუფი" : "ჯგუფის განრიგი"}
             </span>
             <span style={{ fontSize: "13px", color: "#e2e8f0", fontWeight: 700 }}>
               ჯგუფის სახელი: <strong>{currentClassObj.classname}</strong>
@@ -321,7 +440,44 @@ export default function GroupScheduleManager({
               </span>
             </div>
 
-            <div style={{ display: "flex", gap: "10px" }}>
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+              <form onSubmit={handleQuickAddSubject} style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                <input
+                  type="text"
+                  value={newSubjectName}
+                  onChange={e => setNewSubjectName(e.target.value)}
+                  placeholder="ახალი საგანი/აქტივობა..."
+                  style={{
+                    padding: "9px 12px",
+                    borderRadius: "10px",
+                    border: "1px solid #cbd5e1",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#0f172a",
+                    outline: "none",
+                    minWidth: "180px",
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={addingSubject || !newSubjectName.trim()}
+                  style={{
+                    padding: "9px 14px",
+                    borderRadius: "10px",
+                    border: "1px solid #bfdbfe",
+                    background: "#eff6ff",
+                    color: "#2563eb",
+                    fontWeight: 700,
+                    fontSize: "13px",
+                    cursor: addingSubject || !newSubjectName.trim() ? "not-allowed" : "pointer",
+                    opacity: addingSubject || !newSubjectName.trim() ? 0.6 : 1,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  + დამატება
+                </button>
+              </form>
+
               <button
                 type="button"
                 onClick={handleClearCalendar}
@@ -427,7 +583,7 @@ export default function GroupScheduleManager({
                               }}
                             >
                               <option value="">-- საგანი / აქტივობა --</option>
-                              {allSubjects.map(sub => (
+                              {effectiveSubjects.map(sub => (
                                 <option key={sub._id} value={sub._id}>
                                   {sub.name}
                                 </option>
@@ -452,7 +608,7 @@ export default function GroupScheduleManager({
                               }}
                             >
                               <option value="">-- აღმზრდელი --</option>
-                              {allTeachers.map(t => (
+                              {effectiveTeachers.map(t => (
                                 <option key={t._id} value={t._id}>
                                   {t.name} {t.surname}
                                 </option>

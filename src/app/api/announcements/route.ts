@@ -17,14 +17,15 @@ export async function POST(req: NextRequest) {
     const dateStr = today.toISOString().split('T')[0];
     const timeStr = today.toTimeString().split(' ')[0];
 
-    const announcement: Announcement = {
+    const announcement: Announcement & { created_at?: string } = {
       title,
       content,
       author_id,
       author_name,
-      class_id: class_id ? new ObjectId(class_id) : null,
+      class_id: class_id && ObjectId.isValid(class_id) ? new ObjectId(class_id) : null,
       date: dateStr,
-      time: timeStr
+      time: timeStr,
+      created_at: today.toISOString()
     };
 
     await db.collection("announcements").insertOne(announcement);
@@ -51,13 +52,14 @@ export async function GET(req: NextRequest) {
       ];
       if (classId && ObjectId.isValid(classId)) {
         orConditions.push({ class_id: new ObjectId(classId) });
+        orConditions.push({ class_id: classId });
       }
       filter.$or = orConditions;
     }
 
     const announcements = await db.collection("announcements")
       .find(filter)
-      .sort({ date: -1, time: -1 })
+      .sort({ _id: -1 })
       .toArray();
 
     return NextResponse.json(announcements);

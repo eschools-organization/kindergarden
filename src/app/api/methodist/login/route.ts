@@ -41,12 +41,18 @@ export async function POST(req: NextRequest) {
 
     const match = await bcrypt.compare(password, result.password);
     if (match) {
+      if (result.role !== "methodist") {
+        await db.collection("teachers").updateOne(
+          { _id: result._id },
+          { $set: { role: "methodist" } }
+        );
+      }
       const returnId = result.ID || result.user_ID || userId;
       return NextResponse.json({
         message: "ავტორიზაცია წარმატებით დასრულდა",
         user_ID: returnId,
         ID: returnId,
-        role: result.role || "methodist",
+        role: "methodist",
         name: result.name,
         surname: result.surname
       });

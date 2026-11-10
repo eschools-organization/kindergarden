@@ -63,6 +63,7 @@ export default function ActivityPhotoUploader({
   currentTeacherName = "აღმზრდელი",
   showToast
 }: ActivityPhotoUploaderProps) {
+  const [localGroups, setLocalGroups] = useState<ClassObj[]>(groups || []);
   const [selectedGroup, setSelectedGroup] = useState<string>(initialGroupId || (groups[0]?._id || ""));
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().slice(0, 10));
 
@@ -72,15 +73,34 @@ export default function ActivityPhotoUploader({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const [photosList, setPhotosList] = useState<ActivityPhoto[]>([]);
   const [loadingPhotos, setLoadingPhotos] = useState<boolean>(false);
   const [activeLightbox, setActiveLightbox] = useState<ActivityPhoto | null>(null);
 
   useEffect(() => {
-    if (initialGroupId) setSelectedGroup(initialGroupId);
-    else if (groups.length > 0 && !selectedGroup) setSelectedGroup(groups[0]._id);
-  }, [initialGroupId, groups]);
+    if (groups && groups.length > 0) {
+      setLocalGroups(groups);
+    } else if (localGroups.length === 0) {
+      fetch("/api/classes")
+        .then(r => (r.ok ? r.json() : []))
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setLocalGroups(data);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [groups, localGroups.length]);
+
+  useEffect(() => {
+    if (initialGroupId && localGroups.some(g => g._id === initialGroupId)) {
+      setSelectedGroup(initialGroupId);
+    } else if (localGroups.length > 0 && (!selectedGroup || !localGroups.some(g => g._id === selectedGroup))) {
+      setSelectedGroup(localGroups[0]._id);
+    }
+  }, [initialGroupId, localGroups, selectedGroup]);
 
   // Fetch photos for selected group & date
   const fetchPhotos = async () => {
@@ -90,7 +110,7 @@ export default function ActivityPhotoUploader({
       const res = await fetch(`/api/activity-photos?class_id=${selectedGroup}&date=${selectedDate}`);
       if (res.ok) {
         const data = await res.json();
-        setPhotosList(data);
+        setPhotosList(Array.isArray(data) ? data : []);
       }
     } catch {
       // silent
@@ -132,44 +152,107 @@ export default function ActivityPhotoUploader({
     setSelectedActivities(matched);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const readAndCompressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const rawDataUrl = reader.result as string;
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const maxDim = 1280;
+            let width = img.width;
+            let height = img.height;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, width, height);
+              const compressed = canvas.toDataURL("image/jpeg", 0.82);
+              resolve(compressed);
+            } else {
+              resolve(rawDataUrl);
+            }
+          } catch {
+            resolve(rawDataUrl);
+          }
+        };
+        img.onerror = () => resolve(rawDataUrl);
+        img.src = rawDataUrl;
+      };
+      reader.onerror = () => reject(new Error("ფოტოს წაკითხვა ვერ მოხერხდა"));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
+      try {
+        const dataUrl = await readAndCompressImage(file);
+        setPreviewUrl(dataUrl);
+      } catch {
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+      }
     }
   };
 
   const handleUploadAndPublish = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedGroup) {
+    const targetGroup = selectedGroup || localGroups[0]?._id || "";
+    if (!targetGroup) {
       if (showToast) showToast("გთხოვთ აირჩიოთ ჯგუფი", "error");
       return;
     }
-    if (!selectedFile) {
+    if (!selectedFile && !previewUrl) {
       if (showToast) showToast("გთხოვთ აირჩიოთ ფოტო ატვირთვისთვის", "error");
       return;
     }
 
     setUploading(true);
     try {
-      // Step 1: Upload photo file via /api/file-upload
-      const formData = new FormData();
-      formData.append("file", selectedFile);
-
-      const uploadRes = await fetch("/api/file-upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!uploadRes.ok) {
-        const errData = await uploadRes.json();
-        throw new Error(errData.error || "ფაილის ატვირთვა ვერ მოხერხდა");
+      let compressedDataUrl = previewUrl;
+      if (selectedFile && (!compressedDataUrl || compressedDataUrl.startsWith("blob:"))) {
+        compressedDataUrl = await readAndCompressImage(selectedFile);
       }
 
-      const uploadData = await uploadRes.json();
-      const photoUrl = uploadData.file_url;
+      // Step 1: Upload photo via /api/file-upload (with fallback to compressed data URL)
+      let photoUrl = compressedDataUrl || "";
+      try {
+        const uploadRes = await fetch("/api/file-upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            file_name: selectedFile?.name || "activity_photo.jpg",
+            file_data: compressedDataUrl,
+          }),
+        });
+
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          if (uploadData.file_url) {
+            photoUrl = uploadData.file_url;
+          }
+        }
+      } catch {
+        // Fallback to compressedDataUrl directly
+      }
+
+      if (!photoUrl) {
+        throw new Error("ფოტოს დამუშავება ვერ მოხერხდა");
+      }
 
       const finalTitle = activityTitle.trim() || (selectedActivities.length > 0 ? selectedActivities.join(", ") : "შესრულებული აქტივობა");
 
@@ -178,7 +261,7 @@ export default function ActivityPhotoUploader({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          class_id: selectedGroup,
+          class_id: targetGroup,
           teacher_id: currentTeacherId,
           teacher_name: currentTeacherName,
           activity_title: finalTitle,
@@ -190,17 +273,24 @@ export default function ActivityPhotoUploader({
       });
 
       if (saveRes.ok) {
+        const savedData = await saveRes.json();
         if (showToast) showToast("აქტივობის ფოტო წარმატებით აიტვირთა!", "success");
         // Reset form
         setSelectedFile(null);
         setPreviewUrl(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
         setSelectedActivities([]);
         setActivityTitle("");
         setDescription("");
+        if (savedData?.photo) {
+          setPhotosList(prev => [savedData.photo, ...prev]);
+        }
         // Refresh photos list
         fetchPhotos();
       } else {
-        const errData = await saveRes.json();
+        const errData = await saveRes.json().catch(() => ({}));
         throw new Error(errData.message || "შენახვა ვერ მოხერხდა");
       }
     } catch (err: any) {
@@ -291,7 +381,7 @@ export default function ActivityPhotoUploader({
                 }}
               >
                 <option value="">-- აირჩიეთ ჯგუფი --</option>
-                {groups.map(g => (
+                {localGroups.map(g => (
                   <option key={g._id} value={g._id}>
                     {g.classname} (ჯგუფი)
                   </option>
@@ -494,6 +584,7 @@ export default function ActivityPhotoUploader({
               <UploadIcon size={20} />
               {selectedFile ? "📷 ფოტოს შეცვლა" : "📷 აირჩიეთ ფოტო"}
               <input
+                ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
@@ -532,6 +623,9 @@ export default function ActivityPhotoUploader({
                 onClick={() => {
                   setSelectedFile(null);
                   setPreviewUrl(null);
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                  }
                 }}
                 style={{
                   position: "absolute",
@@ -558,16 +652,16 @@ export default function ActivityPhotoUploader({
           <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "8px" }}>
             <button
               type="submit"
-              disabled={uploading || !selectedFile}
+              disabled={uploading}
               style={{
                 padding: "12px 28px",
                 borderRadius: "14px",
                 border: "none",
-                background: uploading ? "#94a3b8" : "#2563eb",
+                background: uploading ? "#94a3b8" : !selectedFile && !previewUrl ? "#64748b" : "#2563eb",
                 color: "#ffffff",
                 fontWeight: 800,
                 fontSize: "15px",
-                cursor: uploading || !selectedFile ? "not-allowed" : "pointer",
+                cursor: uploading ? "not-allowed" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 gap: "8px",

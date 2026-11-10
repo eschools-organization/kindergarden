@@ -24,7 +24,7 @@ async function verifyUser(userId: string, role: string) {
       $or: [{ user_ID: cleanId }, { ID: cleanId }]
     });
     if (teacher) {
-      const userRole = teacher.role || "teacher";
+      const userRole = role === "methodist" ? "methodist" : (teacher.role || "teacher");
       return {
         user_ID: teacher.user_ID || teacher.ID || cleanId,
         ID: teacher.ID || teacher.user_ID || cleanId,

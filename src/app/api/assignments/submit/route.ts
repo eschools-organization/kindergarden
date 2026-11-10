@@ -23,8 +23,49 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { assignment_id, student_id, student_name, file_name, file_url, comment } = body;
+    const contentType = req.headers.get("content-type") || "";
+    let assignment_id = "";
+    let student_id = "";
+    let student_name = "";
+    let file_name = "";
+    let file_url = "";
+    let comment = "";
+
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await req.formData();
+      assignment_id = String(formData.get("assignment_id") || "");
+      student_id = String(formData.get("student_id") || "");
+      student_name = String(formData.get("student_name") || "");
+      comment = String(formData.get("comment") || "");
+      const file = formData.get("file") as File | null;
+      if (file) {
+        file_name = file.name || "attachment";
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const base64Data = buffer.toString("base64");
+        const mimeType = file.type || "application/octet-stream";
+        const client = await clientPromise;
+        const db = client.db("eschools");
+        const uploadRes = await db.collection("uploaded_files").insertOne({
+          filename: file_name,
+          mimeType,
+          size: buffer.length,
+          data: base64Data,
+          created_at: new Date().toISOString(),
+        });
+        file_url = mimeType.startsWith("image/") && buffer.length < 1.5 * 1024 * 1024
+          ? `data:${mimeType};base64,${base64Data}`
+          : `/api/file-upload?id=${uploadRes.insertedId.toString()}`;
+      }
+    } else {
+      const body = await req.json();
+      assignment_id = body.assignment_id;
+      student_id = body.student_id;
+      student_name = body.student_name;
+      file_name = body.file_name;
+      file_url = body.file_url;
+      comment = body.comment;
+    }
 
     if (!assignment_id || !student_id) {
       return NextResponse.json({ error: "არასწორი პარამეტრები" }, { status: 400 });

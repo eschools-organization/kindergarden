@@ -226,8 +226,17 @@ const Teacher: React.FC = () => {
   const chatLoginData = JSON.parse(typeof window !== 'undefined' ? localStorage.getItem("login") || "{}" : "{}");
   const currentUserID = chatLoginData.user_ID || "";
   const teacherObjForChat = allTeachers.find((t: any) => t.user_ID === currentUserID);
+  const isMethodistUser =
+    chatLoginData.role === "methodist" ||
+    teacherObjForChat?.role === "methodist" ||
+    (typeof window !== "undefined" && window.location.pathname.startsWith("/methodist"));
+  const basePath = isMethodistUser ? "/methodist" : "/teacher";
   const teacherIdForChat = teacherObjForChat?._id || currentUserID;
-  const teacherNameForChat = teacherObjForChat ? `${teacherObjForChat.name} ${teacherObjForChat.surname}` : "მასწავლებელი";
+  const teacherNameForChat = teacherObjForChat
+    ? `${teacherObjForChat.name} ${teacherObjForChat.surname}`
+    : isMethodistUser
+      ? "მეთოდისტი"
+      : "მასწავლებელი";
 
   // Fetch teacher messages for unread badge evaluation
   const { data: teacherMessages } = useQuery({
@@ -326,81 +335,92 @@ const Teacher: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchClasses = async () => {
-      // Get teacher user_ID from localStorage
+  const refreshAllData = React.useCallback(async () => {
+    try {
       const loginData = JSON.parse(localStorage.getItem("login") || "{}");
       const user_ID = loginData.user_ID;
-      if (!user_ID) return;
-      // Fetch all classes
-      const res = await fetch("/api/classes");
-      if (!res.ok) return;
-      const allClasses = await res.json();
-      setAllClasses(allClasses);
-      // Fetch all teachers to get _id for this user_ID and for subject display
-      const tRes = await fetch("/api/teacher/all");
-      if (!tRes.ok) return;
-      const teachers = await tRes.json();
+      const isMethodistRoute =
+        typeof window !== "undefined" && window.location.pathname.startsWith("/methodist");
+
+      const [res, tRes, subjRes] = await Promise.all([
+        fetch("/api/classes"),
+        fetch("/api/teacher/all"),
+        fetch("/api/subjects"),
+      ]);
+
+      const fetchedClasses = res.ok ? await res.json() : [];
+      const teachers = tRes.ok ? await tRes.json() : [];
+      const subjects = subjRes.ok ? await subjRes.json() : [];
+
+      setAllClasses(fetchedClasses);
       setAllTeachers(teachers);
-      const teacher = teachers.find((t: any) => t.user_ID === user_ID);
-      if (!teacher) return;
-      const teacherId = teacher._id;
-      // Fetch all subjects for subject names
-      const subjRes = await fetch("/api/subjects");
-      if (!subjRes.ok) return;
-      const subjects = await subjRes.json();
       setAllSubjects(subjects);
-      // Tutor classes
-      const tutor = allClasses.filter((cls: any) => cls.damrigebeli === teacherId);
-      // Teaches classes (any subject with hours_per_week > 0)
-      const teaches = allClasses
-        .filter(
-          (cls: any) =>
-            Array.isArray(cls.subjects) &&
-            cls.subjects.some((subj: any) => 
-              subj.teacher_id === teacherId && 
-              (subj.hours_per_week === undefined || subj.hours_per_week > 0)
-            ),
-        )
-        .map((cls: any) => {
-          // Find subjects this teacher teaches in this class
-          const teacherSubjects = (cls.subjects || [])
-            .filter((subj: any) => 
-              subj.teacher_id === teacherId && 
-              (subj.hours_per_week === undefined || subj.hours_per_week > 0)
-            )
-            .map((subj: any) => {
-              const subjObj = subjects.find(
-                (s: any) => s._id === subj.subject_id,
-              );
-              return subjObj ? subjObj.name : "";
-            })
-            .filter((name: string) => !!name);
-          return { ...cls, teacherSubjects };
-        })
-        .filter((cls: any) => cls.teacherSubjects && cls.teacherSubjects.length > 0);
-      
-      const isMethodist = loginData.role === "methodist";
+
+      const teacher = teachers.find((t: any) => t.user_ID === user_ID);
+      const teacherId = teacher?._id || "";
+      const isMethodist =
+        loginData.role === "methodist" ||
+        teacher?.role === "methodist" ||
+        isMethodistRoute;
+
       if (isMethodist) {
-        setTutorClasses(allClasses);
-        setTeachesClasses(allClasses.map((cls: any) => ({ ...cls, teacherSubjects: ["ყველა აქტივობა"] })));
-      } else {
+        setTutorClasses(fetchedClasses);
+        setTeachesClasses(
+          fetchedClasses.map((cls: any) => ({
+            ...cls,
+            teacherSubjects: ["ყველა აქტივობა"],
+          })),
+        );
+      } else if (teacherId) {
+        const tutor = fetchedClasses.filter((cls: any) => cls.damrigebeli === teacherId);
+        const teaches = fetchedClasses
+          .filter(
+            (cls: any) =>
+              Array.isArray(cls.subjects) &&
+              cls.subjects.some(
+                (subj: any) =>
+                  subj.teacher_id === teacherId &&
+                  (subj.hours_per_week === undefined || subj.hours_per_week > 0),
+              ),
+          )
+          .map((cls: any) => {
+            const teacherSubjects = (cls.subjects || [])
+              .filter(
+                (subj: any) =>
+                  subj.teacher_id === teacherId &&
+                  (subj.hours_per_week === undefined || subj.hours_per_week > 0),
+              )
+              .map((subj: any) => {
+                const subjObj = subjects.find((s: any) => s._id === subj.subject_id);
+                return subjObj ? subjObj.name : "";
+              })
+              .filter((name: string) => !!name);
+            return { ...cls, teacherSubjects };
+          })
+          .filter((cls: any) => cls.teacherSubjects && cls.teacherSubjects.length > 0);
+
         setTutorClasses(tutor);
         setTeachesClasses(teaches);
       }
-      // Fetch teacher schedule
-      setScheduleLoading(true);
-      const scheduleRes = await fetch(
-        `/api/teacher/schedule?user_ID=${encodeURIComponent(user_ID)}&teacher_id=${encodeURIComponent(teacherId || "")}`,
-      );
-      if (scheduleRes.ok) {
-        const sched = await scheduleRes.json();
-        setTeacherSchedule(sched);
+
+      if (user_ID) {
+        setScheduleLoading(true);
+        const scheduleRes = await fetch(
+          `/api/teacher/schedule?user_ID=${encodeURIComponent(user_ID)}&teacher_id=${encodeURIComponent(teacherId)}`,
+        );
+        if (scheduleRes.ok) {
+          const sched = await scheduleRes.json();
+          setTeacherSchedule(sched);
+        }
       }
+    } finally {
       setScheduleLoading(false);
-    };
-    fetchClasses();
+    }
   }, []);
+
+  useEffect(() => {
+    refreshAllData();
+  }, [refreshAllData]);
 
   const AdminContainer: React.CSSProperties = {
     width: "100%",
@@ -632,10 +652,10 @@ const Teacher: React.FC = () => {
         <div className="admin-page-content">
           <header className="admin-page-header animate-fade-in-down">
             <h1 className="admin-page-title">
-              {loginData.role === "methodist" ? "მეთოდისტის" : "მასწავლებლის"} <span style={{ color: selectedColor }}>პანელი</span>
+              {isMethodistUser ? "მეთოდისტის" : "მასწავლებლის"} <span style={{ color: selectedColor }}>პანელი</span>
             </h1>
             <p className="admin-page-subtitle">
-              {loginData.role === "methodist" ? "სასწავლო-მეთოდური პროცესის მართვის სისტემა" : "სასწავლო პროცესის მართვის სისტემა"}
+              {isMethodistUser ? "სასწავლო-მეთოდური პროცესის მართვის სისტემა" : "სასწავლო პროცესის მართვის სისტემა"}
             </p>
           </header>
           <div className="admin-main-view animate-zoom-in" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
@@ -719,20 +739,20 @@ const Teacher: React.FC = () => {
     const classObj = teachesClasses.find((cls: any) => cls._id === id);
     const handleCardClick = (label: string) => {
       if (label === "ნიშნის შეტანა") {
-        navigate(`/teacher/teach/${id}/grade`);
+        navigate(`${basePath}/teach/${id}/grade`);
       } else if (label === "ისტორია") {
-        navigate(`/teacher/teach/${id}/history`);
+        navigate(`${basePath}/teach/${id}/history`);
       } else if (label === "სტატისტიკა") {
-        navigate(`/teacher/teach/${id}/statistics`);
+        navigate(`${basePath}/teach/${id}/statistics`);
       } else if (label === "დავალებები") {
-        navigate(`/teacher/teach/${id}/homework`);
+        navigate(`${basePath}/teach/${id}/homework`);
       }
     };
     return (
       <TeacherLayout>
         <div className="admin-view-container" style={{ maxWidth: '800px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <button
-            onClick={() => navigate("/teacher")}
+            onClick={() => navigate(basePath)}
             className="admin-back-btn"
             style={{ alignSelf: 'flex-start', marginBottom: '24px' }}
           >
@@ -778,7 +798,7 @@ const Teacher: React.FC = () => {
     return (
       <TeacherLayout>
         <div className="admin-view-container" style={{ maxWidth: "900px", width: "100%", margin: "0 auto" }}>
-          <button onClick={() => navigate(`/teacher/teach/${id}`)} className="admin-back-btn" style={{ marginBottom: "24px" }}>
+          <button onClick={() => navigate(`${basePath}/teach/${id}`)} className="admin-back-btn" style={{ marginBottom: "24px" }}>
             უკან დაბრუნება
           </button>
           <HomeworkModule
@@ -1882,8 +1902,8 @@ const Teacher: React.FC = () => {
     { key: "routine", label: "დღის რეჟიმი & კვება", badge: false },
     { key: "activityPhotos", label: "📸 აქტივობის ფოტოები", badge: false },
     { key: "groupSchedule", label: "ჯგუფის განრიგის შეტანა", badge: false },
-    { key: "homeroom", label: loginData.role === "methodist" ? "ყველა ჯგუფი" : "მობარებული ჯგუფები", badge: false },
-    { key: "calendar", label: "ჩემი განრიგი", badge: false },
+    { key: "homeroom", label: isMethodistUser ? "ყველა ჯგუფი" : "მობარებული ჯგუფები", badge: false },
+    { key: "calendar", label: isMethodistUser ? "განრიგების მართვა" : "ჩემი განრიგი", badge: false },
     { key: "notices", label: "განცხადებები", badge: hasUnreadTeacherNotices },
   ];
 
@@ -1923,14 +1943,14 @@ const Teacher: React.FC = () => {
         <div className="admin-view-container" style={{ width: '100%', padding: 0 }}>
           {activeTab === "routine" && (
             <div style={{ width: '100%', marginTop: '20px' }}>
-              <DailyRoutineTracker assignedGroups={tutorClasses.length > 0 ? tutorClasses : teachesClasses} />
+              <DailyRoutineTracker assignedGroups={tutorClasses.length > 0 ? tutorClasses : (teachesClasses.length > 0 ? teachesClasses : allClasses)} />
             </div>
           )}
           {activeTab === "activityPhotos" && (
             <div style={{ width: '100%', marginTop: '20px' }}>
               <ActivityPhotoUploader
-                groups={tutorClasses.length > 0 ? tutorClasses : teachesClasses}
-                initialGroupId={tutorClasses[0]?._id || teachesClasses[0]?._id}
+                groups={tutorClasses.length > 0 ? tutorClasses : (teachesClasses.length > 0 ? teachesClasses : allClasses)}
+                initialGroupId={tutorClasses[0]?._id || teachesClasses[0]?._id || allClasses[0]?._id}
                 currentTeacherId={teacherIdForChat}
                 currentTeacherName={teacherNameForChat}
                 showToast={showToast}
@@ -1947,23 +1967,31 @@ const Teacher: React.FC = () => {
                 allTeachers={allTeachers}
                 currentTeacherId={teacherIdForChat}
                 initialClassId={selectedGroupScheduleId}
-                onScheduleUpdated={() => {
-                  const user_ID = chatLoginData.user_ID;
-                  if (user_ID) {
-                    fetch("/api/classes")
-                      .then(res => res.json())
-                      .then(data => setAllClasses(data));
-                    fetch(`/api/teacher/schedule?user_ID=${encodeURIComponent(user_ID)}&teacher_id=${encodeURIComponent(teacherIdForChat || "")}`)
-                      .then(res => res.json())
-                      .then(sched => setTeacherSchedule(sched));
-                  }
-                }}
+                isMethodist={isMethodistUser}
+                onScheduleUpdated={refreshAllData}
+                onSubjectsUpdated={refreshAllData}
                 showToast={showToast}
               />
             </div>
           )}
           {activeTab === "calendar" &&
-            (scheduleLoading ? (
+            (isMethodistUser ? (
+              <div style={{ width: '100%', marginTop: '20px' }}>
+                <GroupScheduleManager
+                  tutorClasses={tutorClasses}
+                  teachesClasses={teachesClasses}
+                  allClasses={allClasses}
+                  allSubjects={allSubjects}
+                  allTeachers={allTeachers}
+                  currentTeacherId={teacherIdForChat}
+                  initialClassId={selectedGroupScheduleId}
+                  isMethodist={isMethodistUser}
+                  onScheduleUpdated={refreshAllData}
+                  onSubjectsUpdated={refreshAllData}
+                  showToast={showToast}
+                />
+              </div>
+            ) : scheduleLoading ? (
               <div className="admin-form-container" style={{ textAlign: 'center' }}>
                 <div className="admin-form-title">განრიგი იტვირთება...</div>
               </div>
@@ -1995,18 +2023,20 @@ const Teacher: React.FC = () => {
             ))}
           {activeTab === "homeroom" && (
             <div className="admin-view-container">
-              <h2 className="admin-view-title" style={{ marginBottom: '30px', textAlign: 'center' }}>სადამრიგებლო კლასები</h2>
+              <h2 className="admin-view-title" style={{ marginBottom: '30px', textAlign: 'center' }}>
+                {isMethodistUser ? "ყველა ჯგუფი" : "სადამრიგებლო კლასები"}
+              </h2>
               <div className="admin-grid">
-                {tutorClasses.length === 0 && (
+                {(isMethodistUser && tutorClasses.length === 0 ? allClasses : tutorClasses).length === 0 && (
                   <div className="admin-card">
                     <div className="admin-card-label">არ გაქვთ სადამრიგებლო კლასი</div>
                   </div>
                 )}
-                {tutorClasses.map((cls, idx) => (
+                {(isMethodistUser && tutorClasses.length === 0 ? allClasses : tutorClasses).map((cls, idx) => (
                   <div
                     key={cls._id}
                     className="admin-card"
-                    onClick={() => navigate(`/teacher/class/${cls._id}`)}
+                    onClick={() => navigate(`${basePath}/class/${cls._id}`)}
                   >
                     <div className="admin-card-icon-wrapper">
                       <GiTeacherIcon size={32} />
@@ -2032,7 +2062,7 @@ const Teacher: React.FC = () => {
                   <div
                     key={cls._id}
                     className="admin-card"
-                    onClick={() => navigate(`/teacher/teach/${cls._id}`)}
+                    onClick={() => navigate(`${basePath}/teach/${cls._id}`)}
                   >
                     <div className="admin-card-icon-wrapper">
                       <FaChalkboardTeacherIcon size={32} />
@@ -2126,7 +2156,7 @@ const Teacher: React.FC = () => {
       <TeacherLayout>
         <div className="admin-view-container" style={{ width: '100%', maxWidth: '950px', margin: '0 auto' }}>
           <button
-            onClick={() => navigate("/teacher")}
+            onClick={() => navigate(basePath)}
             className="admin-back-btn"
             style={{ marginBottom: '24px' }}
           >
@@ -2142,7 +2172,7 @@ const Teacher: React.FC = () => {
             onManageSchedule={() => {
               setSelectedGroupScheduleId(tutorClass._id);
               setActiveTab("groupSchedule");
-              navigate("/teacher");
+              navigate(basePath);
             }}
           />
         </div>

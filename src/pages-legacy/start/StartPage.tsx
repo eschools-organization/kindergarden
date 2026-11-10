@@ -80,14 +80,16 @@ const StartPage: React.FC = () => {
                 setLoginOpen(false);
                 
                 clearAuthSession();
-                localStorage.setItem('login', JSON.stringify({ role: data.role || role, user_ID, loginTime: Date.now() }));
+                const effectiveUserId = data.user_ID || data.ID || user_ID;
+                const effectiveRole = role === 'methodist' ? 'methodist' : (data.role || role);
+                localStorage.setItem('login', JSON.stringify({ role: effectiveRole, user_ID: effectiveUserId, loginTime: Date.now() }));
                 
-                if (role === 'student' && data.user_ID && data.class_id) {
-                    localStorage.setItem('studentId', data.user_ID);
+                if (role === 'student' && effectiveUserId && data.class_id) {
+                    localStorage.setItem('studentId', effectiveUserId);
                     localStorage.setItem('classId', data.class_id);
                 }
                 
-                navigate(`/${role}`, { replace: true });
+                navigate(`/${effectiveRole}`, { replace: true });
             } else {
                 const errorData = await res.json();
                 setInfoModal({ isOpen: true, message: errorData.message || 'ავტორიზაცია ვერ მოხერხდა', isSuccess: false });
