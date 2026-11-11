@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { ObjectId } from "mongodb";
+import { invalidateCache } from "@/lib/cache";
 
 const DEFAULT_ROUTINE_ITEMS = [
   { time_start: "08:30", time_end: "09:00", icon: "🌅", title: "აღსაზრდელების მიღება & დილის ვარჯიში", description: "დილის გამახურებელი ვარჯიში და მხიარული მუსიკა", day_of_week: 0 },
@@ -13,6 +14,103 @@ const DEFAULT_ROUTINE_ITEMS = [
   { time_start: "16:00", time_end: "16:30", icon: "🍎", title: "სამხარი", description: "ხილი და სამხარი", day_of_week: 0 },
   { time_start: "16:30", time_end: "17:30", icon: "🎨", title: "თავისუფალი თამაში & შინ გაცილება", description: "თამაშები, შეჯამება და მშობლებთან შეხვედრა", day_of_week: 0 }
 ];
+
+async function syncRoutinesToClassCalendar(db: any, classId: string, onlyIfCalendarEmpty = false) {
+  if (!classId || !ObjectId.isValid(classId)) return;
+
+  const classObjId = new ObjectId(classId);
+  const cls = await db.collection("class").findOne({ _id: classObjId });
+  if (!cls) return;
+
+  const existingCal = Array.isArray(cls.calendar) ? cls.calendar : [];
+  const hasAnyFilledSlot = existingCal.some((dayArr: any) =>
+    Array.isArray(dayArr) && dayArr.some((slot: any) => slot && slot.subject_id && String(slot.subject_id) !== "")
+  );
+
+  if (onlyIfCalendarEmpty && hasAnyFilledSlot) {
+    return;
+  }
+
+  const routines = await db
+    .collection("group_routines")
+    .find({ class_id: classId })
+    .sort({ time_start: 1 })
+    .toArray();
+
+  if (routines.length === 0) return;
+
+  const subjectsColl = db.collection("subjects");
+  const allSubjects = await subjectsColl.find({}).toArray();
+  const subjectByName = new Map<string, any>();
+  for (const s of allSubjects) {
+    const n = (s.name || s.subject_name || s.ID || "").trim();
+    if (n) subjectByName.set(n, s._id);
+  }
+
+  let subjectsChanged = false;
+  for (const r of routines) {
+    const titleStr = (r.title || "").trim();
+    if (titleStr && !subjectByName.has(titleStr)) {
+      const ins = await subjectsColl.insertOne({
+        name: titleStr,
+        subject_name: titleStr,
+        ID: titleStr,
+      });
+      subjectByName.set(titleStr, ins.insertedId);
+      subjectsChanged = true;
+    }
+  }
+
+  if (subjectsChanged) {
+    invalidateCache("all_subjects_formatted");
+  }
+
+  let defaultTeacherObjId: any = "";
+  if (cls.damrigebeli && ObjectId.isValid(String(cls.damrigebeli))) {
+    defaultTeacherObjId = new ObjectId(String(cls.damrigebeli));
+  }
+
+  const newCalendar: any[][] = [];
+  for (let dayIdx = 0; dayIdx < 5; dayIdx++) {
+    const dayNum = dayIdx + 1;
+    const dayRoutines = routines.filter(
+      (r: any) => r.day_of_week === 0 || r.day_of_week === undefined || r.day_of_week === null || Number(r.day_of_week) === dayNum
+    );
+
+    const prevDayArr = Array.isArray(existingCal[dayIdx]) ? existingCal[dayIdx] : [];
+    const daySlots: any[] = [];
+
+    for (let slotIdx = 0; slotIdx < 7; slotIdx++) {
+      const routineItem = dayRoutines[slotIdx];
+      const prevSlot = prevDayArr[slotIdx] || { subject_id: "", teacher_id: "" };
+
+      if (routineItem) {
+        const titleStr = (routineItem.title || "").trim();
+        const subjId = subjectByName.get(titleStr) || "";
+        const existingTeacher =
+          prevSlot.teacher_id && ObjectId.isValid(String(prevSlot.teacher_id))
+            ? new ObjectId(String(prevSlot.teacher_id))
+            : defaultTeacherObjId;
+        daySlots.push({
+          subject_id: subjId,
+          teacher_id: subjId ? existingTeacher : "",
+        });
+      } else {
+        daySlots.push({
+          subject_id: prevSlot.subject_id && ObjectId.isValid(String(prevSlot.subject_id)) ? new ObjectId(String(prevSlot.subject_id)) : "",
+          teacher_id: prevSlot.teacher_id && ObjectId.isValid(String(prevSlot.teacher_id)) ? new ObjectId(String(prevSlot.teacher_id)) : "",
+        });
+      }
+    }
+    newCalendar.push(daySlots);
+  }
+
+  await db.collection("class").updateOne(
+    { _id: classObjId },
+    { $set: { calendar: newCalendar } }
+  );
+  invalidateCache("all_classes_formatted");
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -39,6 +137,10 @@ export async function GET(req: NextRequest) {
     }
 
     const items = await collection.find(query).sort({ time_start: 1 }).toArray();
+
+    if (items.length > 0) {
+      await syncRoutinesToClassCalendar(db, classId, true);
+    }
 
     const formatted = items.map(item => ({
       ...item,
@@ -79,6 +181,7 @@ export async function POST(req: NextRequest) {
         created_at: new Date().toISOString()
       }));
       await collection.insertMany(docsToInsert);
+      await syncRoutinesToClassCalendar(db, class_id, false);
       return NextResponse.json({ message: "ნაგულისხმევი განრიგი წარმატებით დაემატა", inserted: docsToInsert.length });
     }
 
@@ -98,6 +201,7 @@ export async function POST(req: NextRequest) {
     };
 
     const result = await collection.insertOne(newItem);
+    await syncRoutinesToClassCalendar(db, class_id, false);
 
     return NextResponse.json({
       message: "დღის განრიგის აქტივობა წარმატებით დაემატა",
@@ -121,6 +225,11 @@ export async function PUT(req: NextRequest) {
     const db = await getDb();
     const collection = db.collection("group_routines");
 
+    const existingDoc = await collection.findOne({ _id: new ObjectId(itemId) });
+    if (!existingDoc) {
+      return NextResponse.json({ message: "აქტივობა ვერ მოიძებნა" }, { status: 404 });
+    }
+
     const updateFields: any = {
       updated_at: new Date().toISOString()
     };
@@ -131,13 +240,13 @@ export async function PUT(req: NextRequest) {
     if (icon !== undefined) updateFields.icon = icon;
     if (day_of_week !== undefined) updateFields.day_of_week = day_of_week !== null ? Number(day_of_week) : null;
 
-    const res = await collection.updateOne(
+    await collection.updateOne(
       { _id: new ObjectId(itemId) },
       { $set: updateFields }
     );
 
-    if (res.matchedCount === 0) {
-      return NextResponse.json({ message: "აქტივობა ვერ მოიძებნა" }, { status: 404 });
+    if (existingDoc.class_id) {
+      await syncRoutinesToClassCalendar(db, String(existingDoc.class_id), false);
     }
 
     return NextResponse.json({ message: "დღის განრიგი წარმატებით განახლდა" });
@@ -163,10 +272,15 @@ export async function DELETE(req: NextRequest) {
     const db = await getDb();
     const collection = db.collection("group_routines");
 
-    const res = await collection.deleteOne({ _id: new ObjectId(id) });
-
-    if (res.deletedCount === 0) {
+    const existingDoc = await collection.findOne({ _id: new ObjectId(id) });
+    if (!existingDoc) {
       return NextResponse.json({ message: "აქტივობა ვერ მოიძებნა" }, { status: 404 });
+    }
+
+    await collection.deleteOne({ _id: new ObjectId(id) });
+
+    if (existingDoc.class_id) {
+      await syncRoutinesToClassCalendar(db, String(existingDoc.class_id), false);
     }
 
     return NextResponse.json({ message: "აქტივობა წარმატებით წაიშალა" });

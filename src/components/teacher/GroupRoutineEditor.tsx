@@ -19,6 +19,7 @@ interface GroupRoutineEditorProps {
   classNameStr?: string;
   selectedColor?: string;
   showToast?: (msg: string, type: "success" | "error") => void;
+  onRoutineUpdated?: () => void;
 }
 
 const EMOJI_OPTIONS = ["🌅", "🍳", "📚", "⚽", "🧩", "🍲", "😴", "🍎", "🎨", "🎵", "🧼", "📖", "🧸", "🧘", "🚀"];
@@ -51,7 +52,8 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
   classId,
   classNameStr = "ჯგუფი",
   selectedColor = "#2563eb",
-  showToast
+  showToast,
+  onRoutineUpdated
 }) => {
   const queryClient = useQueryClient();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -146,6 +148,7 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
       if (res.ok) {
         if (showToast) showToast(isEdit ? "აქტივობა განახლდა" : "აქტივობა დაემატა", "success");
         queryClient.invalidateQueries({ queryKey: ["group-routine-items", classId] });
+        if (onRoutineUpdated) onRoutineUpdated();
         setIsAddModalOpen(false);
       } else {
         if (showToast) showToast(resData.message || "შეცდომა მოხდა", "error");
@@ -168,6 +171,7 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
       if (res.ok) {
         if (showToast) showToast("აქტივობა წაიშალა", "success");
         queryClient.invalidateQueries({ queryKey: ["group-routine-items", classId] });
+        if (onRoutineUpdated) onRoutineUpdated();
       } else {
         if (showToast) showToast("წაშლა ვერ მოხერხდა", "error");
       }
@@ -190,6 +194,7 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
       if (res.ok) {
         if (showToast) showToast("ნაგულისხმევი განრიგი წარმატებით ჩაიტვირთა", "success");
         queryClient.invalidateQueries({ queryKey: ["group-routine-items", classId] });
+        if (onRoutineUpdated) onRoutineUpdated();
       } else {
         if (showToast) showToast("ჩატვირთვა ვერ მოხერხდა", "error");
       }
@@ -537,15 +542,16 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
                     fontSize: "14px",
                     fontWeight: 600,
                     background: "#ffffff",
+                    color: "#0f172a",
                     cursor: "pointer"
                   }}
                 >
-                  <option value={0}>🌟 ყოველი დღე (ორშაბათი - პარასკევი)</option>
-                  <option value={1}>📅 მხოლოდ ორშაბათს</option>
-                  <option value={2}>📅 მხოლოდ სამშაბათს</option>
-                  <option value={3}>📅 მხოლოდ ოთხშაბათს</option>
-                  <option value={4}>📅 მხოლოდ ხუთშაბათს</option>
-                  <option value={5}>📅 მხოლოდ პარასკევს</option>
+                  <option value={0} style={{ color: "#0f172a", background: "#ffffff" }}>🌟 ყოველი დღე (ორშაბათი - პარასკევი)</option>
+                  <option value={1} style={{ color: "#0f172a", background: "#ffffff" }}>📅 მხოლოდ ორშაბათს</option>
+                  <option value={2} style={{ color: "#0f172a", background: "#ffffff" }}>📅 მხოლოდ სამშაბათს</option>
+                  <option value={3} style={{ color: "#0f172a", background: "#ffffff" }}>📅 მხოლოდ ოთხშაბათს</option>
+                  <option value={4} style={{ color: "#0f172a", background: "#ffffff" }}>📅 მხოლოდ ხუთშაბათს</option>
+                  <option value={5} style={{ color: "#0f172a", background: "#ffffff" }}>📅 მხოლოდ პარასკევს</option>
                 </select>
               </div>
 
@@ -566,7 +572,9 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
                       borderRadius: "12px",
                       border: "1px solid #cbd5e1",
                       fontSize: "14px",
-                      fontWeight: 600
+                      fontWeight: 600,
+                      background: "#ffffff",
+                      color: "#0f172a"
                     }}
                   />
                 </div>
@@ -587,7 +595,9 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
                       borderRadius: "12px",
                       border: "1px solid #cbd5e1",
                       fontSize: "14px",
-                      fontWeight: 600
+                      fontWeight: 600,
+                      background: "#ffffff",
+                      color: "#0f172a"
                     }}
                   />
                 </div>
@@ -669,7 +679,9 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
                     borderRadius: "12px",
                     border: "1px solid #cbd5e1",
                     fontSize: "14px",
-                    fontWeight: 600
+                    fontWeight: 600,
+                    background: "#ffffff",
+                    color: "#0f172a"
                   }}
                 />
               </div>
@@ -690,6 +702,8 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
                     border: "1px solid #cbd5e1",
                     fontSize: "14px",
                     fontWeight: 600,
+                    background: "#ffffff",
+                    color: "#0f172a",
                     resize: "none"
                   }}
                 />
@@ -704,6 +718,7 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
                     borderRadius: "12px",
                     border: "1px solid #cbd5e1",
                     background: "#ffffff",
+                    color: "#334155",
                     fontWeight: 700,
                     cursor: "pointer"
                   }}

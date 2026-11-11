@@ -170,6 +170,54 @@ export default function GroupScheduleManager({
     }
   }, [initialClassId, tutorClasses, managedClasses, selectedClassId]);
 
+  const syncedClassesRef = React.useRef<Set<string>>(new Set());
+
+  const refreshSubjectsAndClasses = React.useCallback(async () => {
+    try {
+      const [subjRes, clsRes] = await Promise.all([
+        fetch("/api/subjects"),
+        fetch("/api/classes"),
+      ]);
+      if (subjRes.ok) {
+        const subjData = await subjRes.json();
+        if (Array.isArray(subjData) && subjData.length > 0) {
+          setLocalSubjects(subjData);
+        }
+      }
+      if (clsRes.ok) {
+        const clsData = await clsRes.json();
+        if (Array.isArray(clsData) && clsData.length > 0) {
+          setLocalClasses(clsData);
+        }
+      }
+      if (onScheduleUpdated) onScheduleUpdated();
+      if (onSubjectsUpdated) onSubjectsUpdated();
+    } catch {
+      // ignore
+    }
+  }, [onScheduleUpdated, onSubjectsUpdated]);
+
+  // When selectedClassId changes, ensure group routines are synced to calendar if calendar was empty
+  useEffect(() => {
+    if (!selectedClassId || syncedClassesRef.current.has(selectedClassId)) return;
+    const currentClass = managedClasses.find(c => c._id === selectedClassId);
+    if (!currentClass) return;
+    syncedClassesRef.current.add(selectedClassId);
+    const hasFilledSlots = currentClass.calendar?.some(dayArr =>
+      Array.isArray(dayArr) && dayArr.some(slot => slot && slot.subject_id && String(slot.subject_id) !== "")
+    );
+    if (!hasFilledSlots) {
+      fetch(`/api/class/group-routine?class_id=${selectedClassId}`)
+        .then(r => (r.ok ? r.json() : []))
+        .then(items => {
+          if (Array.isArray(items) && items.length > 0) {
+            refreshSubjectsAndClasses();
+          }
+        })
+        .catch(() => {});
+    }
+  }, [selectedClassId, managedClasses, refreshSubjectsAndClasses]);
+
   // Load calendar grid when selected class changes
   useEffect(() => {
     if (!selectedClassId) return;
@@ -663,6 +711,7 @@ export default function GroupScheduleManager({
               classId={selectedClassId}
               classNameStr={managedClasses.find(c => c._id === selectedClassId)?.classname}
               showToast={showToast}
+              onRoutineUpdated={refreshSubjectsAndClasses}
             />
           )}
         </div>

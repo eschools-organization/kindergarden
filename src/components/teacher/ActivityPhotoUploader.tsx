@@ -152,6 +152,19 @@ export default function ActivityPhotoUploader({
     setSelectedActivities(matched);
   };
 
+  const safeParseJson = async (res: Response) => {
+    const text = await res.text();
+    if (!text) return {};
+    try {
+      return JSON.parse(text);
+    } catch {
+      if (res.status === 413 || text.includes("413") || text.toLowerCase().includes("too large")) {
+        throw new Error("ფოტოს ზომა ძალიან დიდია, გთხოვთ სცადოთ სხვა ფოტო");
+      }
+      throw new Error(`სერვერის შეცდომა (${res.status})`);
+    }
+  };
+
   const readAndCompressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -160,29 +173,35 @@ export default function ActivityPhotoUploader({
         const img = new Image();
         img.onload = () => {
           try {
-            const maxDim = 1280;
-            let width = img.width;
-            let height = img.height;
-            if (width > maxDim || height > maxDim) {
-              if (width > height) {
-                height = Math.round((height * maxDim) / width);
-                width = maxDim;
-              } else {
-                width = Math.round((width * maxDim) / height);
-                height = maxDim;
+            const compressWithParams = (maxDim: number, quality: number) => {
+              let width = img.width;
+              let height = img.height;
+              if (width > maxDim || height > maxDim) {
+                if (width > height) {
+                  height = Math.round((height * maxDim) / width);
+                  width = maxDim;
+                } else {
+                  width = Math.round((width * maxDim) / height);
+                  height = maxDim;
+                }
               }
-            }
-            const canvas = document.createElement("canvas");
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext("2d");
-            if (ctx) {
+              const canvas = document.createElement("canvas");
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext("2d");
+              if (!ctx) return rawDataUrl;
               ctx.drawImage(img, 0, 0, width, height);
-              const compressed = canvas.toDataURL("image/jpeg", 0.82);
-              resolve(compressed);
-            } else {
-              resolve(rawDataUrl);
+              return canvas.toDataURL("image/jpeg", quality);
+            };
+
+            let compressed = compressWithParams(900, 0.72);
+            if (compressed.length > 450_000) {
+              compressed = compressWithParams(720, 0.6);
             }
+            if (compressed.length > 450_000) {
+              compressed = compressWithParams(560, 0.5);
+            }
+            resolve(compressed);
           } catch {
             resolve(rawDataUrl);
           }
@@ -224,39 +243,18 @@ export default function ActivityPhotoUploader({
     setUploading(true);
     try {
       let compressedDataUrl = previewUrl;
-      if (selectedFile && (!compressedDataUrl || compressedDataUrl.startsWith("blob:"))) {
+      if (selectedFile && (!compressedDataUrl || compressedDataUrl.startsWith("blob:") || compressedDataUrl.length > 450_000)) {
         compressedDataUrl = await readAndCompressImage(selectedFile);
       }
 
-      // Step 1: Upload photo via /api/file-upload (with fallback to compressed data URL)
-      let photoUrl = compressedDataUrl || "";
-      try {
-        const uploadRes = await fetch("/api/file-upload", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            file_name: selectedFile?.name || "activity_photo.jpg",
-            file_data: compressedDataUrl,
-          }),
-        });
-
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
-          if (uploadData.file_url) {
-            photoUrl = uploadData.file_url;
-          }
-        }
-      } catch {
-        // Fallback to compressedDataUrl directly
-      }
-
+      const photoUrl = compressedDataUrl || "";
       if (!photoUrl) {
         throw new Error("ფოტოს დამუშავება ვერ მოხერხდა");
       }
 
       const finalTitle = activityTitle.trim() || (selectedActivities.length > 0 ? selectedActivities.join(", ") : "შესრულებული აქტივობა");
 
-      // Step 2: Save activity photo record via /api/activity-photos
+      // Save activity photo record via /api/activity-photos
       const saveRes = await fetch("/api/activity-photos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -272,8 +270,9 @@ export default function ActivityPhotoUploader({
         }),
       });
 
+      const savedData = await safeParseJson(saveRes);
+
       if (saveRes.ok) {
-        const savedData = await saveRes.json();
         if (showToast) showToast("აქტივობის ფოტო წარმატებით აიტვირთა!", "success");
         // Reset form
         setSelectedFile(null);
@@ -290,8 +289,7 @@ export default function ActivityPhotoUploader({
         // Refresh photos list
         fetchPhotos();
       } else {
-        const errData = await saveRes.json().catch(() => ({}));
-        throw new Error(errData.message || "შენახვა ვერ მოხერხდა");
+        throw new Error(savedData.message || "შენახვა ვერ მოხერხდა");
       }
     } catch (err: any) {
       if (showToast) showToast(err.message || "შეცდომა ატვირთვისას", "error");

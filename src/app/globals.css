@@ -116,6 +116,11 @@ select {
   max-width: 100%;
 }
 
+select option {
+  color: #0f172a;
+  background: #ffffff;
+}
+
 @media (max-width: 768px) {
   /* Prevent horizontal overflow from any element */
   div, section, main, form {
