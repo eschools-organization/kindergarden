@@ -1903,7 +1903,6 @@ const Teacher: React.FC = () => {
     { key: "activityPhotos", label: "📸 აქტივობის ფოტოები", badge: false },
     { key: "groupSchedule", label: "ჯგუფის განრიგის შეტანა", badge: false },
     { key: "homeroom", label: isMethodistUser ? "ყველა ჯგუფი" : "მობარებული ჯგუფები", badge: false },
-    { key: "calendar", label: isMethodistUser ? "განრიგების მართვა" : "ჩემი განრიგი", badge: false },
     { key: "notices", label: "განცხადებები", badge: hasUnreadTeacherNotices },
   ];
 
@@ -1974,53 +1973,6 @@ const Teacher: React.FC = () => {
               />
             </div>
           )}
-          {activeTab === "calendar" &&
-            (isMethodistUser ? (
-              <div style={{ width: '100%', marginTop: '20px' }}>
-                <GroupScheduleManager
-                  tutorClasses={tutorClasses}
-                  teachesClasses={teachesClasses}
-                  allClasses={allClasses}
-                  allSubjects={allSubjects}
-                  allTeachers={allTeachers}
-                  currentTeacherId={teacherIdForChat}
-                  initialClassId={selectedGroupScheduleId}
-                  isMethodist={isMethodistUser}
-                  onScheduleUpdated={refreshAllData}
-                  onSubjectsUpdated={refreshAllData}
-                  showToast={showToast}
-                />
-              </div>
-            ) : scheduleLoading ? (
-              <div className="admin-form-container" style={{ textAlign: 'center' }}>
-                <div className="admin-form-title">განრიგი იტვირთება...</div>
-              </div>
-            ) : (
-              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-                  <button
-                    onClick={() => setActiveTab("groupSchedule")}
-                    style={{
-                      background: '#2563eb',
-                      color: '#ffffff',
-                      border: 'none',
-                      padding: '10px 20px',
-                      borderRadius: '12px',
-                      fontWeight: 800,
-                      fontSize: '14px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
-                    }}
-                  >
-                    ✏️ მობარებული ჯგუფის განრიგის შეტანა / ცვლილება
-                  </button>
-                </div>
-                <TeacherCalendarTable schedule={teacherSchedule} />
-              </div>
-            ))}
           {activeTab === "homeroom" && (
             <div className="admin-view-container">
               <h2 className="admin-view-title" style={{ marginBottom: '30px', textAlign: 'center' }}>

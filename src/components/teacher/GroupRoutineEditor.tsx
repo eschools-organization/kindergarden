@@ -212,7 +212,7 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
       padding: "28px",
       border: "1px solid #e2e8f0",
       boxShadow: "0 10px 30px rgba(0,0,0,0.04)",
-      marginTop: "24px"
+      marginTop: "0px"
     }}>
       <div style={{
         display: "flex",
