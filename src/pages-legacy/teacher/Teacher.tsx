@@ -19,6 +19,7 @@ import { clearAuthSession, validateSession, verifyAuthMe } from "@/lib/auth";
 import MessagePopup from "../../components/MessagePopup";
 import GroupScheduleManager from "../../components/teacher/GroupScheduleManager";
 import ActivityPhotoUploader from "../../components/teacher/ActivityPhotoUploader";
+import GroupDailyScheduleAndPhotos from "../../components/teacher/GroupDailyScheduleAndPhotos";
 import "../admin/Admin.css";
 
 const FaChalkboardTeacherIcon = FaChalkboardTeacher as React.ComponentType<{
@@ -39,146 +40,38 @@ const TutorClassDetails: React.FC<{
   allTeachers: any[];
   tutorClass: any;
   selectedColor: string;
+  isMethodist?: boolean;
+  currentTeacherId?: string;
+  currentTeacherName?: string;
+  showToast?: (msg: string, type: 'success' | 'error') => void;
   onSelectSubject?: (subjectId: string, subjectName: string) => void;
   onViewAllGrades?: () => void;
   onManageSchedule?: () => void;
-}> = ({ allSubjects, allTeachers, tutorClass, selectedColor, onSelectSubject, onViewAllGrades, onManageSchedule }) => {
+}> = ({
+  allSubjects,
+  allTeachers,
+  tutorClass,
+  selectedColor,
+  isMethodist = false,
+  currentTeacherId,
+  currentTeacherName,
+  showToast,
+  onSelectSubject,
+  onViewAllGrades,
+  onManageSchedule
+}) => {
   if (!tutorClass) return null;
-  const subjectsList = tutorClass.subjects || [];
   return (
-    <div className="admin-list-container" style={{ padding: '28px', width: '100%', background: '#ffffff', borderRadius: '24px', border: '1px solid #e2e8f0', boxShadow: '0 8px 25px rgba(0,0,0,0.04)' }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '16px',
-        marginBottom: '24px',
-        paddingBottom: '24px',
-        borderBottom: '1px solid #e2e8f0',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '16px',
-            background: '#2563eb',
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 900,
-            fontSize: '22px',
-            flexShrink: 0,
-            boxShadow: '0 4px 15px rgba(37, 99, 235, 0.3)'
-          }}>
-            {tutorClass.classname}
-          </div>
-
-        </div>
-
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          {onManageSchedule && (
-            <button
-              onClick={onManageSchedule}
-              style={{
-                background: '#0f172a',
-                color: '#ffffff',
-                border: 'none',
-                padding: '12px 20px',
-                borderRadius: '14px',
-                fontWeight: 800,
-                fontSize: '14px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(15, 23, 42, 0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              📅 დღის განრიგის შეტანა
-            </button>
-          )}
-          {onViewAllGrades && (
-            <button
-              onClick={onViewAllGrades}
-              style={{
-                background: '#2563eb',
-                color: '#ffffff',
-                border: 'none',
-                padding: '12px 20px',
-                borderRadius: '14px',
-                fontWeight: 800,
-                fontSize: '14px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              📊 ჯგუფის სრული ჟურნალი
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {subjectsList.map((subj: { subject_id: string; teacher_id: string }) => {
-          const subjObj = allSubjects.find((s: { _id: string }) => s._id === subj.subject_id);
-          const subjName = subjObj ? subjObj.name : "უცნობი საგანი";
-          const teacherObj = allTeachers.find((t: { _id: string }) => t._id === subj.teacher_id);
-          const teacherName = teacherObj
-            ? `${teacherObj.name} ${teacherObj.surname}`
-            : "უცნობი მასწავლებელი";
-          return (
-            <div 
-              key={subj.subject_id} 
-              className="tutor-subject-row"
-              onClick={() => onSelectSubject && onSelectSubject(subj.subject_id, subjName)}
-            >
-              <div style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                background: '#eff6ff',
-                color: '#2563eb',
-                border: '1px solid #bfdbfe',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                <FaBookOpen size={20} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 800, fontSize: '16px', color: '#0f172a' }}>{subjName}</div>
-                <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 600, marginTop: '2px' }}>{teacherName}</div>
-              </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectSubject && onSelectSubject(subj.subject_id, subjName);
-                }}
-                style={{
-                  background: '#eff6ff',
-                  border: '1px solid #bfdbfe',
-                  color: '#2563eb',
-                  padding: '8px 16px',
-                  borderRadius: '10px',
-                  fontWeight: 800,
-                  fontSize: '13px',
-                  cursor: 'pointer'
-                }}
-              >
-                📊 ნიშნების ნახვა
-              </button>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    <GroupDailyScheduleAndPhotos
+      classId={tutorClass._id}
+      classNameStr={tutorClass.classname}
+      currentTeacherId={currentTeacherId}
+      currentTeacherName={currentTeacherName}
+      isMethodist={isMethodist}
+      selectedColor={selectedColor}
+      onViewAllGrades={onViewAllGrades}
+      showToast={showToast}
+    />
   );
 };
 
@@ -1900,8 +1793,6 @@ const Teacher: React.FC = () => {
 
   const tabList = [
     { key: "routine", label: "დღის რეჟიმი & კვება", badge: false },
-    { key: "activityPhotos", label: "📸 აქტივობის ფოტოები", badge: false },
-    { key: "groupSchedule", label: "ჯგუფის განრიგის შეტანა", badge: false },
     { key: "homeroom", label: isMethodistUser ? "ყველა ჯგუფი" : "მობარებული ჯგუფები", badge: false },
     { key: "notices", label: "განცხადებები", badge: hasUnreadTeacherNotices },
   ];
@@ -1976,15 +1867,15 @@ const Teacher: React.FC = () => {
           {activeTab === "homeroom" && (
             <div className="admin-view-container">
               <h2 className="admin-view-title" style={{ marginBottom: '30px', textAlign: 'center' }}>
-                {isMethodistUser ? "ყველა ჯგუფი" : "სადამრიგებლო კლასები"}
+                {isMethodistUser ? "ყველა ჯგუფი" : "მობარებული ჯგუფები"}
               </h2>
               <div className="admin-grid">
-                {(isMethodistUser && tutorClasses.length === 0 ? allClasses : tutorClasses).length === 0 && (
+                {((isMethodistUser ? (allClasses.length > 0 ? allClasses : tutorClasses) : (tutorClasses.length > 0 ? tutorClasses : allClasses))).length === 0 && (
                   <div className="admin-card">
-                    <div className="admin-card-label">არ გაქვთ სადამრიგებლო კლასი</div>
+                    <div className="admin-card-label">{isMethodistUser ? "ჯგუფები არ მოიძებნა" : "არ გაქვთ მობარებული ჯგუფი"}</div>
                   </div>
                 )}
-                {(isMethodistUser && tutorClasses.length === 0 ? allClasses : tutorClasses).map((cls, idx) => (
+                {((isMethodistUser ? (allClasses.length > 0 ? allClasses : tutorClasses) : (tutorClasses.length > 0 ? tutorClasses : allClasses))).map((cls, idx) => (
                   <div
                     key={cls._id}
                     className="admin-card"
@@ -2119,13 +2010,12 @@ const Teacher: React.FC = () => {
             allTeachers={teachers}
             tutorClass={tutorClass}
             selectedColor={selectedColor}
+            isMethodist={isMethodistUser}
+            currentTeacherId={teacherIdForChat}
+            currentTeacherName={teacherNameForChat}
+            showToast={showToast}
             onSelectSubject={(subjectId, subjectName) => setActiveSubject({ id: subjectId, name: subjectName })}
             onViewAllGrades={() => setActiveSubject('all')}
-            onManageSchedule={() => {
-              setSelectedGroupScheduleId(tutorClass._id);
-              setActiveTab("groupSchedule");
-              navigate(basePath);
-            }}
           />
         </div>
       </TeacherLayout>

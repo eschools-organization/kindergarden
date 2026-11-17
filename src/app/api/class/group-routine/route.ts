@@ -117,6 +117,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const classId = searchParams.get("class_id");
     const dayOfWeek = searchParams.get("day_of_week");
+    const date = searchParams.get("date");
+    const exactDate = searchParams.get("exact_date") === "true";
 
     if (!classId) {
       return NextResponse.json({ message: "class_id აუცილებელია" }, { status: 400 });
@@ -124,6 +126,51 @@ export async function GET(req: NextRequest) {
 
     const db = await getDb();
     const collection = db.collection("group_routines");
+
+    if (exactDate && date) {
+      const items = await collection.find({ class_id: classId, date }).sort({ time_start: 1 }).toArray();
+      const formatted = items.map(item => ({
+        ...item,
+        _id: item._id.toString(),
+        day_of_week: item.day_of_week !== undefined ? item.day_of_week : 0
+      }));
+      return NextResponse.json(formatted);
+    }
+
+    if (date) {
+      const dateItems = await collection.find({ class_id: classId, date }).sort({ time_start: 1 }).toArray();
+      if (dateItems.length > 0) {
+        return NextResponse.json(dateItems.map(item => ({
+          ...item,
+          _id: item._id.toString(),
+          day_of_week: item.day_of_week !== undefined ? item.day_of_week : 0
+        })));
+      }
+
+      // If no date-specific items, fallback to weekday/general routine items
+      const d = new Date(date);
+      const jsDay = d.getDay(); // 0 is Sun, 1 is Mon... 6 is Sat
+      const targetDay = (jsDay >= 1 && jsDay <= 5) ? jsDay : 0;
+      const fallbackQuery: any = {
+        class_id: classId,
+        $or: [
+          { date: { $exists: false } },
+          { date: null },
+          { date: "" }
+        ]
+      };
+      if (targetDay > 0) {
+        fallbackQuery.$and = [
+          { $or: [{ day_of_week: targetDay }, { day_of_week: 0 }, { day_of_week: { $exists: false } }, { day_of_week: null }] }
+        ];
+      }
+      const fallbackItems = await collection.find(fallbackQuery).sort({ time_start: 1 }).toArray();
+      return NextResponse.json(fallbackItems.map(item => ({
+        ...item,
+        _id: item._id.toString(),
+        day_of_week: item.day_of_week !== undefined ? item.day_of_week : 0
+      })));
+    }
 
     const query: any = { class_id: classId };
     if (dayOfWeek !== null && dayOfWeek !== undefined) {
@@ -157,7 +204,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { action, class_id, time_start, time_end, title, description, icon, day_of_week } = body;
+    const { action, class_id, time_start, time_end, title, description, icon, day_of_week, date } = body;
 
     if (!class_id) {
       return NextResponse.json({ message: "class_id აუცილებელია" }, { status: 400 });
@@ -168,6 +215,24 @@ export async function POST(req: NextRequest) {
 
     // Action: Seed default routine schedule items
     if (action === "seed_default") {
+      if (date) {
+        await collection.deleteMany({ class_id, date });
+        const docsToInsert = DEFAULT_ROUTINE_ITEMS.map((item, idx) => ({
+          class_id,
+          date,
+          time_start: item.time_start,
+          time_end: item.time_end,
+          icon: item.icon,
+          title: item.title,
+          description: item.description,
+          day_of_week: 0,
+          order: idx + 1,
+          created_at: new Date().toISOString()
+        }));
+        await collection.insertMany(docsToInsert);
+        return NextResponse.json({ message: "ნაგულისხმევი განრიგი წარმატებით დაემატა ამ თარიღისთვის", inserted: docsToInsert.length });
+      }
+
       await collection.deleteMany({ class_id });
       const docsToInsert = DEFAULT_ROUTINE_ITEMS.map((item, idx) => ({
         class_id,
@@ -191,11 +256,12 @@ export async function POST(req: NextRequest) {
 
     const newItem = {
       class_id,
+      date: date || "",
       time_start,
       time_end: time_end || time_start,
       title,
       description: description || "",
-      icon: icon || "📅",
+      icon: icon || "🌟",
       day_of_week: day_of_week !== undefined && day_of_week !== null ? Number(day_of_week) : 0,
       created_at: new Date().toISOString()
     };
@@ -215,7 +281,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    const { _id, id, time_start, time_end, title, description, icon, day_of_week } = body;
+    const { _id, id, time_start, time_end, title, description, icon, day_of_week, date } = body;
     const itemId = _id || id;
 
     if (!itemId || !ObjectId.isValid(itemId)) {
@@ -239,6 +305,7 @@ export async function PUT(req: NextRequest) {
     if (description !== undefined) updateFields.description = description;
     if (icon !== undefined) updateFields.icon = icon;
     if (day_of_week !== undefined) updateFields.day_of_week = day_of_week !== null ? Number(day_of_week) : null;
+    if (date !== undefined) updateFields.date = date;
 
     await collection.updateOne(
       { _id: new ObjectId(itemId) },
