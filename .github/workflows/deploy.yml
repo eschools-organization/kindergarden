@@ -1,42 +1,23 @@
-name: Deploy to server
-
+name: Deploy anbanela
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: deploy-anbanela
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy bg via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST || secrets.SSH_HOST }}
-          username: ${{ secrets.SERVER_USER || secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SERVER_PORT || secrets.SSH_PORT || 22 }}
-          script: |
-            cd /var/www/html/bg
-            git fetch origin main
-            git reset --hard origin/main
-            git clean -fd
-            npm install
-            npm run build
-            pm2 restart bg
+      - name: Configure SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
 
-      - name: Deploy anbanela via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST || secrets.SSH_HOST }}
-          username: ${{ secrets.SERVER_USER || secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SERVER_PORT || secrets.SSH_PORT || 22 }}
-          script: |
-            cd /var/www/html/anbanela
-            git fetch origin main
-            git reset --hard origin/main
-            git clean -fd
-            npm install
-            npm run build
-            pm2 restart anbanela
+      - name: Deploy
+        run: ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}
