@@ -574,7 +574,7 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
                       fontSize: "14px",
                       fontWeight: 600,
                       background: "#ffffff",
-                      color: "#0f172a"
+                      color: "#000000"
                     }}
                   />
                 </div>
@@ -597,7 +597,7 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
                       fontSize: "14px",
                       fontWeight: 600,
                       background: "#ffffff",
-                      color: "#0f172a"
+                      color: "#000000"
                     }}
                   />
                 </div>
@@ -681,7 +681,7 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
                     fontSize: "14px",
                     fontWeight: 600,
                     background: "#ffffff",
-                    color: "#0f172a"
+                    color: "#000000"
                   }}
                 />
               </div>
@@ -703,7 +703,7 @@ export const GroupRoutineEditor: React.FC<GroupRoutineEditorProps> = ({
                     fontSize: "14px",
                     fontWeight: 600,
                     background: "#ffffff",
-                    color: "#0f172a",
+                    color: "#000000",
                     resize: "none"
                   }}
                 />

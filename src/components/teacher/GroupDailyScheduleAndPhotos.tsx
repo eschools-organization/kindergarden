@@ -457,6 +457,16 @@ export default function GroupDailyScheduleAndPhotos({
 
   return (
     <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "24px" }}>
+      <style>{`
+        .group-schedule-input {
+          color: #000000 !important;
+          background-color: #ffffff !important;
+        }
+        .group-schedule-input::placeholder {
+          color: #64748b !important;
+          opacity: 1;
+        }
+      `}</style>
       {/* Top Group Banner Card */}
       <div
         style={{
@@ -587,12 +597,13 @@ export default function GroupDailyScheduleAndPhotos({
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
+              className="group-schedule-input"
               style={{
                 padding: "8px 14px",
                 borderRadius: "10px",
                 border: "1.5px solid #cbd5e1",
                 background: "#ffffff",
-                color: "#0f172a",
+                color: "#000000",
                 fontWeight: 700,
                 fontSize: "14px",
                 outline: "none",
@@ -789,6 +800,7 @@ export default function GroupDailyScheduleAndPhotos({
                     value={timeStart}
                     onChange={(e) => setTimeStart(e.target.value)}
                     required
+                    className="group-schedule-input"
                     style={{
                       width: "100%",
                       padding: "10px 14px",
@@ -796,6 +808,8 @@ export default function GroupDailyScheduleAndPhotos({
                       border: "1.5px solid #cbd5e1",
                       fontSize: "15px",
                       fontWeight: 700,
+                      color: "#000000",
+                      background: "#ffffff",
                       outline: "none",
                       boxSizing: "border-box"
                     }}
@@ -811,6 +825,7 @@ export default function GroupDailyScheduleAndPhotos({
                     value={timeEnd}
                     onChange={(e) => setTimeEnd(e.target.value)}
                     required
+                    className="group-schedule-input"
                     style={{
                       width: "100%",
                       padding: "10px 14px",
@@ -818,6 +833,8 @@ export default function GroupDailyScheduleAndPhotos({
                       border: "1.5px solid #cbd5e1",
                       fontSize: "15px",
                       fontWeight: 700,
+                      color: "#000000",
+                      background: "#ffffff",
                       outline: "none",
                       boxSizing: "border-box"
                     }}
@@ -866,6 +883,7 @@ export default function GroupDailyScheduleAndPhotos({
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="მაგ. დილის მიღება და გამახურებელი ვარჯიში, ხატვა, ზღაპრის კითხვა..."
                   required
+                  className="group-schedule-input"
                   style={{
                     width: "100%",
                     padding: "12px 16px",
@@ -873,6 +891,8 @@ export default function GroupDailyScheduleAndPhotos({
                     border: "1.5px solid #cbd5e1",
                     fontSize: "15px",
                     fontWeight: 600,
+                    color: "#000000",
+                    background: "#ffffff",
                     outline: "none",
                     boxSizing: "border-box"
                   }}
@@ -889,12 +909,16 @@ export default function GroupDailyScheduleAndPhotos({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="მაგ. ფერადი ფანქრებით შემოდგომის ფოთლების ხატვა, წვრილი მოტორიკის განვითარება..."
+                  className="group-schedule-input"
                   style={{
                     width: "100%",
                     padding: "12px 16px",
                     borderRadius: "12px",
                     border: "1.5px solid #cbd5e1",
                     fontSize: "14px",
+                    fontWeight: 600,
+                    color: "#000000",
+                    background: "#ffffff",
                     outline: "none",
                     boxSizing: "border-box"
                   }}
@@ -1195,6 +1219,7 @@ export default function GroupDailyScheduleAndPhotos({
                   onChange={(e) => setPhotoActivityTitle(e.target.value)}
                   placeholder="მაგ. ხატვის გაკვეთილი, ეზოში თამაში, დილის ვარჯიში..."
                   required
+                  className="group-schedule-input"
                   style={{
                     width: "100%",
                     padding: "12px 16px",
@@ -1202,6 +1227,8 @@ export default function GroupDailyScheduleAndPhotos({
                     border: "1.5px solid #cbd5e1",
                     fontSize: "15px",
                     fontWeight: 600,
+                    color: "#000000",
+                    background: "#ffffff",
                     outline: "none",
                     boxSizing: "border-box"
                   }}
@@ -1218,12 +1245,16 @@ export default function GroupDailyScheduleAndPhotos({
                   value={photoDescription}
                   onChange={(e) => setPhotoDescription(e.target.value)}
                   placeholder="მოკლე აღწერა..."
+                  className="group-schedule-input"
                   style={{
                     width: "100%",
                     padding: "12px 16px",
                     borderRadius: "12px",
                     border: "1.5px solid #cbd5e1",
                     fontSize: "14px",
+                    fontWeight: 600,
+                    color: "#000000",
+                    background: "#ffffff",
                     outline: "none",
                     boxSizing: "border-box"
                   }}
@@ -1439,7 +1470,8 @@ export default function GroupDailyScheduleAndPhotos({
                     value={editingItem.time_start}
                     onChange={(e) => setEditingItem({ ...editingItem, time_start: e.target.value })}
                     required
-                    style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontWeight: 700, boxSizing: "border-box" }}
+                    className="group-schedule-input"
+                    style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontWeight: 700, color: "#000000", background: "#ffffff", boxSizing: "border-box" }}
                   />
                 </div>
 
@@ -1452,7 +1484,8 @@ export default function GroupDailyScheduleAndPhotos({
                     value={editingItem.time_end}
                     onChange={(e) => setEditingItem({ ...editingItem, time_end: e.target.value })}
                     required
-                    style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontWeight: 700, boxSizing: "border-box" }}
+                    className="group-schedule-input"
+                    style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontWeight: 700, color: "#000000", background: "#ffffff", boxSizing: "border-box" }}
                   />
                 </div>
               </div>
@@ -1466,7 +1499,8 @@ export default function GroupDailyScheduleAndPhotos({
                   value={editingItem.title}
                   onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })}
                   required
-                  style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontWeight: 700, boxSizing: "border-box" }}
+                  className="group-schedule-input"
+                  style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontWeight: 700, color: "#000000", background: "#ffffff", boxSizing: "border-box" }}
                 />
               </div>
 
@@ -1478,7 +1512,8 @@ export default function GroupDailyScheduleAndPhotos({
                   type="text"
                   value={editingItem.description || ""}
                   onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
-                  style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1.5px solid #cbd5e1", boxSizing: "border-box" }}
+                  className="group-schedule-input"
+                  style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1.5px solid #cbd5e1", fontWeight: 600, color: "#000000", background: "#ffffff", boxSizing: "border-box" }}
                 />
               </div>
 

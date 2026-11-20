@@ -514,7 +514,6 @@ const Admin: React.FC = () => {
 
             { icon: IoSchoolSharp, label: 'ასაკობრივი ჯგუფები' },
             { icon: FaHistory, label: 'ისტორია' },
-            { icon: FaCalendarAlt, label: 'დღის რეჟიმის კალენდარი' },
             { icon: FaBullhorn, label: 'განცხადებები' },
         ];
 

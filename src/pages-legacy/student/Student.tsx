@@ -2,21 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { useColor } from './../../components/ColorContext';
 import ColorPalette from './../../components/ColorPalette';
-import StudentSubjectsGrades from './../../components/StudentSubjectsGrades';
 import NoticeBoard from './../../components/NoticeBoard';
 import ChatModule from './../../components/ChatModule';
 import DailyTimeline from './../../components/DailyTimeline';
-import HomeworkModule from './../../components/HomeworkModule';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import MonthlyPaymentButtons from '@/components/MonthlyPaymentButtons';
 import { 
   FaSignOutAlt, 
-  FaGraduationCap, 
   FaBullhorn, 
   FaComments,
   FaCalendarAlt,
-  FaTasks,
   FaUserGraduate,
   FaCreditCard
 } from 'react-icons/fa';
@@ -60,7 +56,7 @@ const Student: React.FC = () => {
     const queryClient = useQueryClient();
     const { selectedColor } = useColor();
     const [{ studentId, classId }] = useState(readStudentSession);
-    const [activeTab, setActiveTab] = useState<'grades' | 'timeline' | 'homework' | 'notices' | 'messages' | 'payments'>('grades');
+    const [activeTab, setActiveTab] = useState<'timeline' | 'notices' | 'messages' | 'payments'>('timeline');
 
     // Fetch student info
     const { data: studentInfo } = useQuery({
@@ -212,13 +208,19 @@ const Student: React.FC = () => {
     }
 
     const renderTabContent = () => {
+        const effectiveStudentId = studentInfo?._id ? String(studentInfo._id) : studentId;
+        const effectiveStudentUserId = studentInfo?.user_ID || studentId;
+
         switch (activeTab) {
-            case 'grades':
-                return <StudentSubjectsGrades studentId={studentId} classId={classId} />;
             case 'timeline':
-                return <DailyTimeline classId={classId} />;
-            case 'homework':
-                return <HomeworkModule userRole="student" userId={studentId} userName={studentFullName} classId={classId} selectedColor={selectedColor} />;
+                return (
+                    <DailyTimeline 
+                        classId={classId} 
+                        studentId={effectiveStudentId} 
+                        studentUserId={effectiveStudentUserId}
+                        studentName={studentFullName} 
+                    />
+                );
             case 'notices':
                 return <NoticeBoard currentUser={{ id: studentId, name: studentFullName, role: 'student', classId: classId }} />;
             case 'messages':
@@ -254,10 +256,10 @@ const Student: React.FC = () => {
                 {/* Header Banner */}
                 <header className="student-page-header animate-fade-in-down">
                     <h1 className="admin-page-title">
-                        მშობლის / აღსაზრდელის <span style={{ color: selectedColor }}>პანელი</span>
+                        მშობლის <span style={{ color: selectedColor }}>პანელი</span>
                     </h1>
                     <p className="admin-page-subtitle">
-                        {getGreeting()}, {studentFullName} • {getGeorgianDate()}
+                        {getGreeting()} • {studentFullName} • {getGeorgianDate()}
                     </p>
                 </header>
 
@@ -406,19 +408,7 @@ const Student: React.FC = () => {
                             onClick={() => setActiveTab('timeline')}
                             className={`admin-tab-btn student-tab-btn ${activeTab === 'timeline' ? 'active' : ''}`}
                         >
-                            <FaCalendarAlt size={16} /> 🧸 დღის რეჟიმი & კვება
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('grades')}
-                            className={`admin-tab-btn student-tab-btn ${activeTab === 'grades' ? 'active' : ''}`}
-                        >
-                            <FaGraduationCap size={16} /> 📊 შეფასება & უნარები
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('homework')}
-                            className={`admin-tab-btn student-tab-btn ${activeTab === 'homework' ? 'active' : ''}`}
-                        >
-                            <FaTasks size={16} /> 🎨 სახლის აქტივობები
+                            <FaCalendarAlt size={16} /> 🧸 ბავშვის დღიური & კვება
                         </button>
                         <button
                             onClick={() => setActiveTab('notices')}
@@ -447,6 +437,25 @@ const Student: React.FC = () => {
                                 }}>
                                     ახალი ({unreadNotices.length})
                                 </span>
+                            )}
+                        </button>
+
+                        <button
+                            onClick={() => setActiveTab('messages')}
+                            className={`admin-tab-btn student-tab-btn ${activeTab === 'messages' ? 'active' : ''}`}
+                            style={{ position: 'relative' }}
+                        >
+                            <FaComments size={16} /> 💬 შეტყობინებები
+                            {hasUnreadMessages && (
+                                <span style={{
+                                    marginLeft: '6px',
+                                    padding: '2px 8px',
+                                    borderRadius: '12px',
+                                    backgroundColor: '#ef4444',
+                                    color: '#ffffff',
+                                    fontSize: '11px',
+                                    fontWeight: 900,
+                                }} />
                             )}
                         </button>
 

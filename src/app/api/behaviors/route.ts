@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { Behavior } from "@/lib/models";
+import { ObjectId } from "mongodb";
 
 export async function POST(req: NextRequest) {
   try {
@@ -47,7 +48,27 @@ export async function GET(req: NextRequest) {
     const query: Record<string, any> = {};
 
     if (student_id) {
-      query.student_id = student_id;
+      let possibleIds: string[] = [student_id];
+      try {
+        const studentConditions: any[] = [
+          { user_ID: student_id },
+          { ID: student_id },
+          { _id: student_id }
+        ];
+        if (ObjectId.isValid(student_id) && student_id.length === 24) {
+          studentConditions.push({ _id: new ObjectId(student_id) });
+        }
+        const student = await db.collection("students").findOne({ $or: studentConditions });
+        if (student) {
+          if (student._id) possibleIds.push(student._id.toString());
+          if (student.user_ID) possibleIds.push(String(student.user_ID));
+          if (student.ID) possibleIds.push(String(student.ID));
+        }
+      } catch {
+        // ignore
+      }
+      possibleIds = Array.from(new Set(possibleIds.filter(Boolean)));
+      query.student_id = { $in: possibleIds };
     }
     if (class_id) {
       query.class_id = class_id;
